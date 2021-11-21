@@ -1,13 +1,10 @@
 {
   "compilerOptions": {
-    "preserveConstEnums": true,
-    "strictNullChecks": true,
-    "sourceMap": true,
-    "allowJs": true,
     "target": "es5",
+    "module": "commonjs",
+    "declaration": true,
     "outDir": "build",
-    "moduleResolution": "node",
-    "lib": ["es2015"],
-    "rootDir": "./"
-  }
+    "strict": true
+  },
+  "exclude": ["node_modules", "**/__tests__/*"]
 }
