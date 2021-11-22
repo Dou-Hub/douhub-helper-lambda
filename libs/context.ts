@@ -183,7 +183,7 @@ export const checkCaller = async (event: any, settings?: CheckCallerSettings | n
 
     if (settings.needSolution || settings.verifyReCaptcha) {
         result.context.solution = await getSolution(solutionId);
-        if (!_.isObject(result.context.solution)) {
+        if (!isObject(result.context.solution)) {
             return {
                 type: 'ERROR', error: {
                     ...HTTPERROR_403,

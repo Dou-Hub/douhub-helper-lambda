@@ -1302,11 +1302,12 @@ domexception@^2.0.1:
     webidl-conversions "^5.0.0"
 
 douhub-helper-service@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/douhub-helper-service/-/douhub-helper-service-1.0.1.tgz"
-  integrity sha512-8dP5iL+H2SyDhuPppqSWMF1t2rv/hM2iilZ99fAonlstR3YKKnbQZOsGdZ/Z3hX/bB2PIW02Lj6Cxp2Wm+K/kg==
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/douhub-helper-service/-/douhub-helper-service-1.0.2.tgz#bb7dd70daa740536d2bbbf9b510208830956024d"
+  integrity sha512-OLd+bHbZfuL6lkD3SiAUkIWaHSYcbqnQ3oMp5kfOSnxFksiJeOfzM46I7V97SmhNVwn7nSTICU5AM+/ruD8FeQ==
   dependencies:
     aws-sdk "^2.1033.0"
+    douhub-helper-util "^1.0.14"
     lodash "^4.17.21"
 
 douhub-helper-util@^1.0.14:

@@ -22,12 +22,12 @@ export const encryptToken = async (id: string): Promise<string> => {
 };
 
 //Upsert a token record in DynamoDB user profile table, id: tokens.${userId}
-export const createToken = async (userId: string, type: string, data: object, allowMultiple?: boolean): Promise<Token> => {
+export const createToken = async (userId: string, type: string, data: Record<string, any>, allowMultiple?: boolean): Promise<Token> => {
 
     const id: string = `tokens.${userId}`;
     let token: Token | null = null;
     let profile = (await _dynamoDb.get({ TableName: PROFILE_TABLE_NAME, Key: { id } }).promise()).Item;
-    token = { token: await encryptToken(`${userId}|${type}|${newGuid()}`), createdOn: utcISOString()), type, data };
+    token = { token: await encryptToken(`${userId}|${type}|${newGuid()}`), createdOn: utcISOString(), type, data };
 
     if (!isObject(profile)) {
         //if there is no user tokens profile, we will create one
@@ -63,7 +63,7 @@ export const createToken = async (userId: string, type: string, data: object, al
     return token;
 };
 
-export const createUserToken = async (userId: string, organizationId: string, roles, allowMultiple?: boolean): Promise<Token | null> => {
+export const createUserToken = async (userId: string, organizationId: string, roles: Array<string>, allowMultiple?: boolean): Promise<Token | null> => {
     const type: string = 'user';
     let token: Token | null = await getToken(userId, type);
     if (!token) {

@@ -1,6 +1,7 @@
 {
   "name": "douhub-helper-lambda",
-  "version": "1.0.0",
+  "licence": "MIT",
+  "version": "1.0.3",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {

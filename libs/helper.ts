@@ -21,8 +21,6 @@ const _rateLimiter = new RateLimiterMemory({
     duration: RATE_LIMIT_DURATION, // Per second
 });
 
-
-
 export const checkRateLimit = async (sourceIp: string, apiName?: string, points?: number) => {
 
     const callerId = `${sourceIp}-${apiName}`;

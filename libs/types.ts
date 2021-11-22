@@ -13,8 +13,8 @@ export type LambdaError = {
     statusName?: string;
     type?: string;
     source?: string;
-    detail?: object;
-    error?: object | string;
+    detail?: Record<string, any>;
+    error?: Record<string, any> | string;
 }
 
 export type LambdaResponse = {
