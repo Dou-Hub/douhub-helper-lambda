@@ -1,45 +1,33 @@
-//  COPYRIGHT:       PrimeObjects Software Inc. (C) 2021 All Right Reserved
-//  COMPANY URL:     https://www.primeobjects.com/
-//  CONTACT:         developer@primeobjects.com
+//  Copyright PrimeObjects Software Inc. and other contributors <https://www.primeobjects.com/>
 // 
-//  This source is subject to the PrimeObjects License Agreements. 
-// 
-//  Our EULAs define the terms of use and license for each PrimeObjects product. 
-//  Whenever you install a PrimeObjects product or research PrimeObjects source code file, you will be prompted to review and accept the terms of our EULA. 
-//  If you decline the terms of the EULA, the installation should be aborted and you should remove any and all copies of our products and source code from your computer. 
-//  If you accept the terms of our EULA, you must abide by all its terms as long as our technologies are being employed within your organization and within your applications.
-// 
-//  THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY
-//  OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT
-//  LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-//  FITNESS FOR A PARTICULAR PURPOSE.
-// 
-//  ALL OTHER RIGHTS RESERVED
+//  This source code is licensed under the MIT license.
+//  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
 import { getPropValueOfObject, isNonEmptyString, isGuid } from 'douhub-helper-util';
 import { isObject, find, isNil, isBoolean, isNumber, isArray } from 'lodash';
 import { checkToken, getToken } from './token';
 import {
-    HTTPERROR_400, HTTPERROR_429, HTTPERROR_403, PROFILE_TABLE_NAME,
+    HTTPERROR_400, HTTPERROR_429, HTTPERROR_403,
     ERROR_TOO_MANY_REQUESTS, ERROR_AUTH_FAILED,
     ERROR_PARAMETER_INVALID,
-    ERROR_PARAMETER_MISSING
+    ERROR_PARAMETER_MISSING,
+    REGION, SECRET_ID, PROFILE_TABLE_NAME
 } from './constants';
-import { LambdaError, CheckCallerSettings, CheckCallerResult } from './types';
+import { CheckCallerSettings, CheckCallerResult } from './types';
 import { CognitoIdentityServiceProvider, DynamoDB } from 'aws-sdk';
 import { getPropValueOfEvent, checkRateLimit } from './helper';
 import axios from 'axios';
-import { getSecretValue } from '../services/secret-manager';
-import _ = require('lodash');
+import { getSecretValue } from 'douhub-helper-service';
 
 const _cognitoIdentityServiceProvider = new CognitoIdentityServiceProvider();
-const _dynamoDb = new DynamoDB.DocumentClient({ region: process.env.REGION });
+const _dynamoDb = new DynamoDB.DocumentClient({ region: REGION });
 
-export const verifyReCaptchaToken = async (siteKey, token) => {
+
+export const verifyReCaptchaToken = async (siteKey: string, token: string) => {
     try {
 
-        const googleApiKey = await getSecretValue('GOOGLE_RECAPTCHA_KEY');
-        const googleProjectId = await getSecretValue('GOOGLE_PROJECT_ID');
+        const googleApiKey = await getSecretValue(SECRET_ID, 'GOOGLE_RECAPTCHA_KEY');
+        const googleProjectId = await getSecretValue(SECRET_ID, 'GOOGLE_PROJECT_ID');
 
         const options: any = {
             method: 'post',
@@ -57,7 +45,7 @@ export const verifyReCaptchaToken = async (siteKey, token) => {
     return null;
 };
 
-export const parseAccessToken = async (event) => {
+export const parseAccessToken = async (event: any) => {
 
     const accessToken = getPropValueOfEvent(event, 'accessToken');
     if (isNonEmptyString(accessToken)) {
@@ -90,7 +78,7 @@ export const parseAccessToken = async (event) => {
 };
 
 
-export const parseApiToken = async (event) => {
+export const parseApiToken = async (event: any) => {
 
     let apiToken = getPropValueOfEvent(event, "apiToken");
 
@@ -108,10 +96,12 @@ export const parseApiToken = async (event) => {
 };
 
 
-export const getContext = async (event: any, settings?: any) => {
+export const getContext = async (event: any, settings?: Record<string, any>): Promise<Record<string, any>> => {
 
     if (!isObject(settings)) settings = {};
     let context = await parseApiToken(event);
+
+    const { profileTableName } = settings;
 
     if (!isObject(context)) context = await parseAccessToken(event);
 
@@ -119,14 +109,14 @@ export const getContext = async (event: any, settings?: any) => {
     context.event = event;
 
     if (isNonEmptyString(context.userId) && !settings.skipUserProfile) {
-        context.user = (await _dynamoDb.get({ TableName: PROFILE_TABLE_NAME, Key: { id: `user.${context.userId}` } }).promise()).Item;
+        context.user = (await _dynamoDb.get({ TableName: profileTableName, Key: { id: `user.${context.userId}` } }).promise()).Item;
         if (isObject(context.user)) context.user.id = context.userId;
     }
 
     return context;
 };
 
-export const getSolution = async (solutionId) => {
+export const getSolution = async (solutionId: string) => {
     return (await _dynamoDb.get({
         TableName: PROFILE_TABLE_NAME,
         Key: { id: `solution.${solutionId}` }

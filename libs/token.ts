@@ -1,37 +1,24 @@
-//  COPYRIGHT:       PrimeObjects Software Inc. (C) 2021 All Right Reserved
-//  COMPANY URL:     https://www.primeobjects.com/
-//  CONTACT:         developer@primeobjects.com
+//  Copyright PrimeObjects Software Inc. and other contributors <https://www.primeobjects.com/>
 // 
-//  This source is subject to the PrimeObjects License Agreements. 
-// 
-//  Our EULAs define the terms of use and license for each PrimeObjects product. 
-//  Whenever you install a PrimeObjects product or research PrimeObjects source code file, you will be prompted to review and accept the terms of our EULA. 
-//  If you decline the terms of the EULA, the installation should be aborted and you should remove any and all copies of our products and source code from your computer. 
-//  If you accept the terms of our EULA, you must abide by all its terms as long as our technologies are being employed within your organization and within your applications.
-// 
-//  THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY
-//  OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT
-//  LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-//  FITNESS FOR A PARTICULAR PURPOSE.
-// 
-//  ALL OTHER RIGHTS RESERVED
+//  This source code is licensed under the MIT license.
+//  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
 
-import { decrypt, encrypt } from './helper';
-import { newGuid, utcISOString } from '../moved-to-npm-libs/helper';
+import { decrypt, encrypt } from './crypto';
+import { newGuid, utcISOString } from 'douhub-helper-util';
 import { isObject, find, map } from 'lodash';
-import { getSecretValue } from '../services/secret-manager';
+import { getSecretValue } from 'douhub-helper-service';
 import { DynamoDB } from 'aws-sdk';
-import { PROFILE_TABLE_NAME } from './constants';
+import { PROFILE_TABLE_NAME, SECRET_ID } from './constants';
 import { Token } from './types';
 
 const _dynamoDb = new DynamoDB.DocumentClient({ region: process.env.REGION });
 
-export const encryptToken = async (id:string):Promise<string> => {
+export const encryptToken = async (id: string): Promise<string> => {
     return encrypt(
         id,
-        await getSecretValue('SECRET_CODE'),
-        await getSecretValue('SECRET_IV'));
+        await getSecretValue(SECRET_ID, 'SECRET_CODE'),
+        await getSecretValue(SECRET_ID, 'SECRET_IV'));
 };
 
 //Upsert a token record in DynamoDB user profile table, id: tokens.${userId}
@@ -40,7 +27,7 @@ export const createToken = async (userId: string, type: string, data: object, al
     const id: string = `tokens.${userId}`;
     let token: Token | null = null;
     let profile = (await _dynamoDb.get({ TableName: PROFILE_TABLE_NAME, Key: { id } }).promise()).Item;
-    token = { token: await encryptToken(`${userId}|${type}|${newGuid()}`), createdOn: utcISOString(), type, data };
+    token = { token: await encryptToken(`${userId}|${type}|${newGuid()}`), createdOn: utcISOString()), type, data };
 
     if (!isObject(profile)) {
         //if there is no user tokens profile, we will create one
@@ -98,8 +85,8 @@ export const checkToken = async (token: string): Promise<Token | null> => {
 
     try {
         const userId = (await decrypt(token,
-            await getSecretValue('SECRET_CODE'),
-            await getSecretValue('SECRET_IV'))).split('|')[0];
+            await getSecretValue(SECRET_ID, 'SECRET_CODE'),
+            await getSecretValue(SECRET_ID, 'SECRET_IV'))).split('|')[0];
         const id = `tokens.${userId}`;
         const profile = (await _dynamoDb.get({ TableName: PROFILE_TABLE_NAME, Key: { id } }).promise()).Item;
         if (!isObject(profile)) return null;

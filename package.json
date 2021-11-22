@@ -15,14 +15,15 @@
   "dependencies": {
     "aws-sdk": "^2.1033.0",
     "axios": "^0.24.0",
+    "crypto-js": "^4.1.1",
+    "douhub-helper-service": "^1.0.1",
     "douhub-helper-util": "^1.0.14",
-    "is-url": "^1.2.4",
     "js-base64": "^3.7.2",
-    "libphonenumber-js": "^1.9.42",
     "lodash": "^4.17.21",
-    "uuid": "^8.3.2"
+    "rate-limiter-flexible": "^2.3.5"
   },
   "devDependencies": {
+    "@types/crypto-js": "^4.0.2",
     "@types/lodash": "^4.14.177",
     "@types/uuid": "^8.3.3",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
