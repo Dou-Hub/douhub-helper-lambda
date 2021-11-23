@@ -1311,9 +1311,9 @@ douhub-helper-service@^1.0.1:
     lodash "^4.17.21"
 
 douhub-helper-util@^1.0.14:
-  version "1.0.17"
-  resolved "https://registry.yarnpkg.com/douhub-helper-util/-/douhub-helper-util-1.0.17.tgz#9d18801bba1ef190ff1be41fd50a6e0d7723ac7a"
-  integrity sha512-kFIk7Z1rjBhxZ9FZZqvMFXDQ4JSHTyLI4tYnJ4W/kbnDtvlNOX7w1Nl2UBAMlkspKHRmzKBXAdHJF8t6XobZ3Q==
+  version "1.0.20"
+  resolved "https://registry.yarnpkg.com/douhub-helper-util/-/douhub-helper-util-1.0.20.tgz#3494e12e713b39156a9c4cc60e5d55a7814562f2"
+  integrity sha512-1BT3Du4+KQQ1N5oZwskMKhTm5nFp3AmSq+5fYPLA6qzuGzMzsr9LnCdUOkCEcubfwM+XV3aWcKd/soQ919JsIA==
   dependencies:
     is-url "^1.2.4"
     js-base64 "^3.7.2"

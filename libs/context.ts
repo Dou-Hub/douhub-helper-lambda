@@ -124,12 +124,13 @@ export const getSolution = async (solutionId: string) => {
 }
 
 
-export const checkCaller = async (event: any, settings?: CheckCallerSettings | null): Promise<CheckCallerResult> => {
+export const checkCaller = async (event: any, settings?: CheckCallerSettings): Promise<CheckCallerResult> => {
 
     if (!isObject(settings)) settings = {};
+    const { needSolution, verifyReCaptcha } = settings;
 
     const solutionId = getPropValueOfEvent(event, 'solutionId');
-    if (!isNonEmptyString(solutionId)) {
+    if (!isNonEmptyString(solutionId) && needSolution) {
         return {
             type: 'ERROR', error: {
                 ...HTTPERROR_400,
@@ -146,9 +147,11 @@ export const checkCaller = async (event: any, settings?: CheckCallerSettings | n
 
     const result: CheckCallerResult = { context: {}, type: 'CONTINUE' };
 
+    //Get recaptchaToken submitted
     const recaptchaToken = getPropValueOfEvent(event, 'recaptchaToken');
     const sourceIp = event.identity && event.identity.sourceIp;
 
+    //check the rate limit
     if (!settings.ignoreRateLimit && !(await checkRateLimit(sourceIp, settings.apiName, settings.apiPoints))) {
         return {
             type: 'ERROR', error: {
@@ -163,7 +166,7 @@ export const checkCaller = async (event: any, settings?: CheckCallerSettings | n
         };
     }
 
-
+    //need authentication & therefore get user context
     if (!settings.ignoreAuth) {
         result.context = await getContext(event, settings);
         if (!isNonEmptyString(result.context.userId)) {
@@ -181,16 +184,17 @@ export const checkCaller = async (event: any, settings?: CheckCallerSettings | n
         }
     }
 
-    if (settings.needSolution || settings.verifyReCaptcha) {
+    //if needSolution=true or verify ReCaptcha, we will need to get solution profile
+    if (needSolution || verifyReCaptcha && isNonEmptyString(recaptchaToken)) {
         result.context.solution = await getSolution(solutionId);
         if (!isObject(result.context.solution)) {
             return {
                 type: 'ERROR', error: {
                     ...HTTPERROR_403,
-                    type: ERROR_PARAMETER_INVALID,
+                    type: 'ERROR_CONTEXT_SOLUTION',
                     source: 'context.checkCaller',
                     detail: {
-                        name: 'recaptchaToken',
+                        solutionId,
                         settings
                     }
                 }
@@ -199,7 +203,7 @@ export const checkCaller = async (event: any, settings?: CheckCallerSettings | n
         }
     }
 
-    if (settings.verifyReCaptcha) {
+    if (verifyReCaptcha) {
 
         if (!isNonEmptyString(recaptchaToken)) {
             return {

@@ -3,7 +3,7 @@
 //  This source code is licensed under the MIT license.
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
-import { getPropValueOfObject, isNonEmptyString, isGuid } from 'douhub-helper-util';
+import { getPropValueOfObject, getBooleanPropValue, isNonEmptyString, isGuid } from 'douhub-helper-util';
 import { isObject, find, isNil, isBoolean, isNumber, isArray } from 'lodash';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { LambdaError, LambdaResponse } from './types';
@@ -38,14 +38,14 @@ export const checkRateLimit = async (sourceIp: string, apiName?: string, points?
 };
 
 
+
 export const getPropValueOfEvent = (event: any, name: string, defaultValue?: string) => {
 
     let v = getPropValueOfObject(event.headers, name);
-    if (!v) v = getPropValueOfObject(event.path, name);
-    if (!v) v = getPropValueOfObject(event.body, name);
-    if (!v) v = getPropValueOfObject(event.query, name);
-
-    return !isNil(v) ? v : (isNil(defaultValue) ? null : defaultValue);
+    if (isNil(v)) v = getPropValueOfObject(event.path, name);
+    if (isNil(v)) v = getPropValueOfObject(event.body, name);
+    if (isNil(v)) v = getPropValueOfObject(event.query, name);
+    return !isNil(v) ? v : (isNil(defaultValue) ? undefined : defaultValue);
 };
 
 export const getObjectValueOfEvent = (event: any, name: string, defaultValue?: object) => {
@@ -57,7 +57,7 @@ export const getObjectValueOfEvent = (event: any, name: string, defaultValue?: o
     catch (error) {
         console.error({ error, name, defaultValue, val });
     }
-    return null;
+    return undefined;
 };
 
 export const getGuidValueOfEvent = (event: any, name: string, defaultValue?: string) => {
@@ -83,7 +83,7 @@ export const getBooleanValueOfEvent = (event: any, name: string, defaultValue?: 
     const val = getPropValueOfEvent(event, name);
     if (`${val}`.toLowerCase() == 'true') return true;
     if (`${val}`.toLowerCase() == 'false') return false;
-    return isNil(defaultValue) ? null : `${defaultValue}`.toLowerCase() == 'true';
+    return defaultValue;
 };
 
 export const getArrayPropValueOfEvent = (event: any, name: string, defaultValue?: []) => {
