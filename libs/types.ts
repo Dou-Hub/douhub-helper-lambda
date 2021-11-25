@@ -26,7 +26,7 @@ export type LambdaResponse = {
 
 export type CheckCallerSettings = {
     apiName?: string,
-    apiPoints?: number,
+    apiPoints?: number
     stopAWSEvent?: boolean,
     needSolution?: boolean,
     ignoreAuth?: boolean,

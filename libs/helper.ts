@@ -11,10 +11,10 @@ import { ERROR_UNEXPECTED, RATE_LIMIT_DURATION, RATE_LIMIT_POINTS_PER_SECOND } f
 import { DynamoDB } from 'aws-sdk';
 
 import { getSecretValue } from 'douhub-helper-service';
-import {S3} from 'aws-sdk';
+import { S3 } from 'aws-sdk';
 import { SECRET_ID } from '..';
 
-const _dynamoDb = new DynamoDB.DocumentClient({ region: process.env.REGION });
+// const _dynamoDb = new DynamoDB.DocumentClient({ region: process.env.REGION });
 
 const _rateLimiter = new RateLimiterMemory({
     points: isNonEmptyString(process.env.RATE_LIMIT_POINTS_PER_SECOND) ? parseInt(`${process.env.RATE_LIMIT_POINTS_PER_SECOND}`) : RATE_LIMIT_POINTS_PER_SECOND,
@@ -24,7 +24,7 @@ const _rateLimiter = new RateLimiterMemory({
 export const checkRateLimit = async (sourceIp: string, apiName?: string, points?: number) => {
 
     const callerId = `${sourceIp}-${apiName}`;
-
+    console.log({ apiName, points });
     try {
         await _rateLimiter.consume(callerId, isNumber(points) ? points : 2); // consume points
         return true;

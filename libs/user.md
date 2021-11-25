@@ -13,7 +13,7 @@ import { hasRole, checkRecordPrivilege } from "../util/auth";
 import { DynamoDB } from 'aws-sdk';
 
 const _dynamoDb = new DynamoDB.DocumentClient({ region: process.env.REGION });
-export const PROFILE_TABLE_NAME = `${process.env.RESOURCE_PREFIX}-profile`;
+export const DYNAMO_DB_TABLE_NAME_PROFILE = `${process.env.RESOURCE_PREFIX}-profile`;
 
 
 export const userOrgs = async (email, mobile) => {
@@ -62,7 +62,7 @@ export const verifyCode = async (email, mobile, verificationCode) => {
 
     //direct cosmosDb update
     await _.cosmosDBUpsert(user);
-    await _dynamoDb.put({ TableName: PROFILE_TABLE_NAME, Item: _.assign({}, user, { id: `user.${user.id}` }) }).promise();
+    await _dynamoDb.put({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Item: _.assign({}, user, { id: `user.${user.id}` }) }).promise();
     return true;
 };
 
@@ -123,7 +123,7 @@ export const createUser = async (context, userData, password) => {
 
         //create organization in dynamoDb
         const createdDynamoOrganizationId = `organization.${createdCosmosOrganizationId}`;
-        await _dynamoDb.put({ TableName: PROFILE_TABLE_NAME, Item: _.assign({}, organization, { id: createdDynamoOrganizationId }) }).promise();
+        await _dynamoDb.put({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Item: _.assign({}, organization, { id: createdDynamoOrganizationId }) }).promise();
 
         context.organization = organization;
         context.organizationId = organization.id;
@@ -147,7 +147,7 @@ export const createUser = async (context, userData, password) => {
 
         //insert user into dynamoDb
         const createdDynamoUserId = `user.${userData.id}`;
-        await _dynamoDb.put({ TableName: PROFILE_TABLE_NAME, Item: _.assign({}, userData, { id: createdDynamoUserId }) }).promise();
+        await _dynamoDb.put({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Item: _.assign({}, userData, { id: createdDynamoUserId }) }).promise();
 
         userToken = await createToken(newUserId, 'user', { userId: newUserId, organizationId: newOrganizationId, roles: userData.roles, licenses: userData.licenses });
 
@@ -168,13 +168,13 @@ export const createUser = async (context, userData, password) => {
 
         //we will have to rollback what we have done
         if (createdCosmosOrganizationId) await cosmosDb.deleteRecord(context, createdCosmosOrganizationId, { skipSecurityCheck: true });
-        if (createdDynamoOrganizationId) await dynamoDb.deleteRecord(createdDynamoOrganizationId, PROFILE_TABLE_NAME);
+        if (createdDynamoOrganizationId) await dynamoDb.deleteRecord(createdDynamoOrganizationId, DYNAMO_DB_TABLE_NAME_PROFILE);
 
         if (createdCosmosUserId) await cosmosDb.deleteRecord(context, createdCosmosUserId, { skipSecurityCheck: true });
-        if (createdDynamoUserId) await dynamoDb.deleteRecord(createdDynamoUserId, PROFILE_TABLE_NAME);
+        if (createdDynamoUserId) await dynamoDb.deleteRecord(createdDynamoUserId, DYNAMO_DB_TABLE_NAME_PROFILE);
 
         if (_.isObject(userToken)) {
-            await _dynamoDb.delete({ TableName: PROFILE_TABLE_NAME, Key: { id: `tokens.${createdCosmosUserId}` } }).promise();
+            await _dynamoDb.delete({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Key: { id: `tokens.${createdCosmosUserId}` } }).promise();
         }
 
         _.throw('ERROR_API_CREATE_USER',
@@ -247,7 +247,7 @@ export const updateUser = async (context, data) => {
         data = await cosmosDb.upsertRecord(context, data, 'update');
 
         //update user into dynamoDb
-        await _dynamoDb.put({ TableName: PROFILE_TABLE_NAME, Item: _.assign({}, data, { id: `user.${data.id}` }) }).promise();
+        await _dynamoDb.put({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Item: _.assign({}, data, { id: `user.${data.id}` }) }).promise();
 
         return { user: data };
 
@@ -352,14 +352,14 @@ export const deleteUser = async (context, id) => {
     //Delete Organization
     if (deleteOrg) {
         await cosmosDb.deleteRecord(context, toDeleteUserOrganizationId, { skipSecurityCheck: true });
-        await dynamoDb.deleteRecord(`organization.${toDeleteUserOrganizationId}`, PROFILE_TABLE_NAME);
+        await dynamoDb.deleteRecord(`organization.${toDeleteUserOrganizationId}`, DYNAMO_DB_TABLE_NAME_PROFILE);
     }
 
     //Delete User
     await cosmosDb.deleteRecord(context, toDeleteUserId, { skipSecurityCheck: true });
-    await dynamoDb.deleteRecord(`user.${toDeleteUserId}`, PROFILE_TABLE_NAME);
+    await dynamoDb.deleteRecord(`user.${toDeleteUserId}`, DYNAMO_DB_TABLE_NAME_PROFILE);
 
-    await _dynamoDb.delete({ TableName: PROFILE_TABLE_NAME, Key: { id: `tokens.${toDeleteUserId}` } }).promise();
+    await _dynamoDb.delete({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Key: { id: `tokens.${toDeleteUserId}` } }).promise();
 
     //Delete Cognito User
     await cognito.deleteUser(solution.auth.cognito.userPoolId, toDeleteUserOrganizationId, toDeleteUserId);

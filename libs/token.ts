@@ -9,7 +9,7 @@ import { newGuid, utcISOString } from 'douhub-helper-util';
 import { isObject, find, map } from 'lodash';
 import { getSecretValue } from 'douhub-helper-service';
 import { DynamoDB } from 'aws-sdk';
-import { PROFILE_TABLE_NAME, SECRET_ID } from './constants';
+import { DYNAMO_DB_TABLE_NAME_PROFILE, SECRET_ID } from './constants';
 import { Token } from './types';
 
 const _dynamoDb = new DynamoDB.DocumentClient({ region: process.env.REGION });
@@ -26,7 +26,7 @@ export const createToken = async (userId: string, type: string, data: Record<str
 
     const id: string = `tokens.${userId}`;
     let token: Token | null = null;
-    let profile = (await _dynamoDb.get({ TableName: PROFILE_TABLE_NAME, Key: { id } }).promise()).Item;
+    let profile = (await _dynamoDb.get({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Key: { id } }).promise()).Item;
     token = { token: await encryptToken(`${userId}|${type}|${newGuid()}`), createdOn: utcISOString(), type, data };
 
     if (!isObject(profile)) {
@@ -57,7 +57,7 @@ export const createToken = async (userId: string, type: string, data: Record<str
 
     //update token profile record
     await _dynamoDb.put({
-        TableName: PROFILE_TABLE_NAME, Item: profile
+        TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Item: profile
     }).promise();
 
     return token;
@@ -75,7 +75,7 @@ export const createUserToken = async (userId: string, organizationId: string, ro
 export const getToken = async (userId: string, type: string): Promise<Token | null> => {
 
     const id: string = `tokens.${userId}`;
-    const profile = (await _dynamoDb.get({ TableName: PROFILE_TABLE_NAME, Key: { id } }).promise()).Item;
+    const profile = (await _dynamoDb.get({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Key: { id } }).promise()).Item;
     if (!isObject(profile)) return null;
     const token: Token = find(profile.tokens, (t) => t.type == type);
     return token || null;
@@ -88,7 +88,7 @@ export const checkToken = async (token: string): Promise<Token | null> => {
             await getSecretValue(SECRET_ID, 'SECRET_CODE'),
             await getSecretValue(SECRET_ID, 'SECRET_IV'))).split('|')[0];
         const id = `tokens.${userId}`;
-        const profile = (await _dynamoDb.get({ TableName: PROFILE_TABLE_NAME, Key: { id } }).promise()).Item;
+        const profile = (await _dynamoDb.get({ TableName: DYNAMO_DB_TABLE_NAME_PROFILE, Key: { id } }).promise()).Item;
         if (!isObject(profile)) return null;
         const result: Token = find(profile.tokens, (t) => t.token == token);
         return result ? result : null;

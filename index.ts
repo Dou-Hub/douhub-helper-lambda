@@ -3,8 +3,6 @@
 //  This source code is licensed under the MIT license.
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
-
-
 export {
     ERROR_PARAMETER_MISSING,
     ERROR_PARAMETER_INVALID,
@@ -29,7 +27,7 @@ export {
     HTTPERROR_504,
 
     SECRET_ID,
-    PROFILE_TABLE_NAME,
+    DYNAMO_DB_TABLE_NAME_PROFILE,
     CACHE_TABLE_NAME,
 
     RATE_LIMIT_DURATION,
@@ -51,8 +49,6 @@ export {
     onSuccess,
     s3Uploader
 } from './libs/helper';
-
-
 
 export {
     verifyReCaptchaToken,
