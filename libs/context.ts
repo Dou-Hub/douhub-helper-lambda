@@ -4,31 +4,30 @@
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
 import { getPropValueOfObject, isNonEmptyString, isGuid } from 'douhub-helper-util';
-import { s3Get } from 'douhub-helper-service';
+import { s3Get, dynamoDBRetrieve,  } from 'douhub-helper-service';
 import { isObject, find, isNil, isBoolean, isNumber, isArray } from 'lodash';
 import { checkToken, getToken } from './token';
 import {
     HTTPERROR_400, HTTPERROR_429, HTTPERROR_403,
     ERROR_TOO_MANY_REQUESTS, ERROR_AUTH_FAILED,
     S3_BUCKET_NAME_DATA,
-    ERROR_PARAMETER_MISSING,
-    REGION, SECRET_ID, DYNAMO_DB_TABLE_NAME_PROFILE
+    ERROR_PARAMETER_MISSING, DYNAMO_DB_TABLE_NAME_PROFILE,
+    REGION, 
 } from './constants';
 import { CheckCallerSettings, CheckCallerResult } from './types';
-import { CognitoIdentityServiceProvider, DynamoDB } from 'aws-sdk';
+import { CognitoIdentityServiceProvider } from 'aws-sdk';
 import { getPropValueOfEvent, checkRateLimit } from './helper';
 import axios from 'axios';
 import { getSecretValue } from 'douhub-helper-service';
 
 const _cognitoIdentityServiceProvider = new CognitoIdentityServiceProvider();
-const _dynamoDb = new DynamoDB.DocumentClient({ region: REGION });
 
 
 export const verifyReCaptchaToken = async (siteKey: string, token: string) => {
     try {
 
-        const googleApiKey = await getSecretValue(SECRET_ID, 'GOOGLE_RECAPTCHA_KEY');
-        const googleProjectId = await getSecretValue(SECRET_ID, 'GOOGLE_PROJECT_ID');
+        const googleApiKey = await getSecretValue('GOOGLE_RECAPTCHA_KEY');
+        const googleProjectId = await getSecretValue('GOOGLE_PROJECT_ID');
 
         const options: any = {
             method: 'post',
@@ -61,16 +60,23 @@ export const parseAccessToken = async (event: any) => {
 
         //// console.log("getUser by accessToken - end");
         if (isObject(cognitoUser) && isNonEmptyString(cognitoUser.Username)) {
+
             const userNameInfo = cognitoUser.Username.split(".");
             const organizationId = userNameInfo[0];
             const userId = userNameInfo[1];
 
             //Try to get user token, because it has roles & licenses
             const userToken = await getToken(userId, 'user');
-            if (isNil(userToken)) throw 'Missing user token record';
-            const { roles, licenses } = userToken.data;
-
-            return { accessToken, userId, organizationId, roles, licenses };
+            if (!userToken) 
+            {
+                console.error('Missing user token record');
+                return null;
+            }
+            else
+            {
+                const { roles, licenses } = userToken.data;
+                return { accessToken, userId, organizationId, roles, licenses };
+            }
         }
 
     }
@@ -102,15 +108,13 @@ export const getContext = async (event: any, settings?: Record<string, any>): Pr
     if (!isObject(settings)) settings = {};
     let context = await parseApiToken(event);
 
-    const { profileTableName } = settings;
-
     if (!isObject(context)) context = await parseAccessToken(event);
 
-    if (!isObject(context)) context = {};
-    context.event = event;
+    // if (!isObject(context)) context = {};
+    // context.event = event;
 
     if (isNonEmptyString(context.userId) && !settings.skipUserProfile) {
-        context.user = (await _dynamoDb.get({ TableName: profileTableName, Key: { id: `user.${context.userId}` } }).promise()).Item;
+        context.user = await dynamoDBRetrieve(`user.${context.userId}`, DYNAMO_DB_TABLE_NAME_PROFILE, REGION);
         if (isObject(context.user)) context.user.id = context.userId;
     }
 
@@ -119,13 +123,11 @@ export const getContext = async (event: any, settings?: Record<string, any>): Pr
 
 
 export const getSolution = async (solutionId: string) => {
-    try
-    {
+    try {
         return await s3Get(S3_BUCKET_NAME_DATA, `${solutionId}/solution.json`, REGION);
     }
-    catch(error)
-    {
-        console.error({error, bucketName: S3_BUCKET_NAME_DATA, fileName: `${solutionId}/solution.json`});
+    catch (error) {
+        console.error({ error, bucketName: S3_BUCKET_NAME_DATA, fileName: `${solutionId}/solution.json` });
         return null;
     }
 }
@@ -199,7 +201,7 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
         result.context.solution = await getSolution(solutionId);
         if (!isObject(result.context.solution)) {
             return {
-                type: 'ERROR', 
+                type: 'ERROR',
                 error: {
                     ...HTTPERROR_403,
                     type: 'ERROR_CONTEXT_SOLUTION',

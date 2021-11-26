@@ -12,7 +12,6 @@ import { DynamoDB } from 'aws-sdk';
 
 import { getSecretValue } from 'douhub-helper-service';
 import { S3 } from 'aws-sdk';
-import { SECRET_ID } from '..';
 
 // const _dynamoDb = new DynamoDB.DocumentClient({ region: process.env.REGION });
 
@@ -141,7 +140,7 @@ export const s3Uploader = async () => {
 
     if (!_s3Uploader) {
 
-        const s3UploaderSecret = (await getSecretValue(SECRET_ID, 'S3_UPLOADER')).split("|");
+        const s3UploaderSecret = (await getSecretValue('S3_UPLOADER')).split("|");
 
         _s3Uploader = new S3({
             region: process.env.REGION,
