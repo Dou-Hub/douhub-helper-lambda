@@ -124,7 +124,8 @@ export const getContext = async (event: any, settings?: Record<string, any>): Pr
 
 export const getSolution = async (solutionId: string) => {
     try {
-        return await s3Get(S3_BUCKET_NAME_DATA, `${solutionId}/solution.json`, REGION);
+        const result = await s3Get(S3_BUCKET_NAME_DATA, `${solutionId}/solution.json`, REGION);
+        if (isObject(result)) return JSON.parse(result.content);
     }
     catch (error) {
         console.error({ error, bucketName: S3_BUCKET_NAME_DATA, fileName: `${solutionId}/solution.json` });
