@@ -3,22 +3,20 @@
 //  This source code is licensed under the MIT license.
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
-import { getPropValueOfObject, isNonEmptyString, isGuid } from 'douhub-helper-util';
+import { isNonEmptyString } from 'douhub-helper-util';
 import { s3Get, dynamoDBRetrieve,  } from 'douhub-helper-service';
-import { isObject, find, isNil, isBoolean, isNumber, isArray } from 'lodash';
+import { isObject } from 'lodash';
 import { checkToken, getToken } from './token';
 import {
     HTTPERROR_400, HTTPERROR_429, HTTPERROR_403,
     ERROR_TOO_MANY_REQUESTS, ERROR_AUTH_FAILED,
-    S3_BUCKET_NAME_DATA,
-    ERROR_PARAMETER_MISSING, DYNAMO_DB_TABLE_NAME_PROFILE,
-    REGION, 
+    ERROR_PARAMETER_MISSING
 } from './constants';
 import { CheckCallerSettings, CheckCallerResult } from './types';
 import { CognitoIdentityServiceProvider } from 'aws-sdk';
 import { getPropValueOfEvent, checkRateLimit } from './helper';
 import axios from 'axios';
-import { getSecretValue } from 'douhub-helper-service';
+import { getSecretValue, AWS_REGION,  S3_BUCKET_NAME_DATA, DYNAMO_DB_TABLE_NAME_PROFILE} from 'douhub-helper-service';
 
 const _cognitoIdentityServiceProvider = new CognitoIdentityServiceProvider();
 
@@ -114,7 +112,7 @@ export const getContext = async (event: any, settings?: Record<string, any>): Pr
     // context.event = event;
 
     if (isNonEmptyString(context.userId) && !settings.skipUserProfile) {
-        context.user = await dynamoDBRetrieve(`user.${context.userId}`, DYNAMO_DB_TABLE_NAME_PROFILE, REGION);
+        context.user = await dynamoDBRetrieve(`user.${context.userId}`, DYNAMO_DB_TABLE_NAME_PROFILE, AWS_REGION);
         if (isObject(context.user)) context.user.id = context.userId;
     }
 
@@ -124,7 +122,7 @@ export const getContext = async (event: any, settings?: Record<string, any>): Pr
 
 export const getSolution = async (solutionId: string) => {
     try {
-        const result = await s3Get(S3_BUCKET_NAME_DATA, `${solutionId}/solution.json`, REGION);
+        const result = await s3Get(S3_BUCKET_NAME_DATA, `${solutionId}/solution.json`, AWS_REGION);
         if (isObject(result)) return JSON.parse(result.content);
     }
     catch (error) {

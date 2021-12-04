@@ -7,8 +7,7 @@
 import { decrypt, encrypt } from './crypto';
 import { newGuid, utcISOString } from 'douhub-helper-util';
 import { find, map } from 'lodash';
-import { getSecretValue, dynamoDBRetrieve, dynamoDBCreate } from 'douhub-helper-service';
-import { DYNAMO_DB_TABLE_NAME_PROFILE, REGION } from './constants';
+import { getSecretValue, dynamoDBRetrieve, dynamoDBCreate, DYNAMO_DB_TABLE_NAME_PROFILE } from 'douhub-helper-service';
 import { Token } from './types';
 
 export const encryptToken = async (id: string): Promise<string> => {
@@ -29,7 +28,7 @@ export const decryptToken = async (token: string): Promise<string> => {
 export const createToken = async (userId: string, type: string, data: Record<string, any>, allowMultiple?: boolean): Promise<Token> => {
 
     const id: string = `tokens.${userId}`;
-    let profile: Record<string, any> = await dynamoDBRetrieve(id, DYNAMO_DB_TABLE_NAME_PROFILE, REGION);
+    let profile: Record<string, any> = await dynamoDBRetrieve(id, DYNAMO_DB_TABLE_NAME_PROFILE);
     let token = { token: await encryptToken(`${userId}|${type}|${newGuid()}`), createdOn: utcISOString(), type, data };
    
     if (!profile) {
@@ -63,7 +62,7 @@ export const createToken = async (userId: string, type: string, data: Record<str
     }
 
     //update token profile record
-    await dynamoDBCreate(profile, DYNAMO_DB_TABLE_NAME_PROFILE, REGION);
+    await dynamoDBCreate(profile, DYNAMO_DB_TABLE_NAME_PROFILE);
 
     return token;
 };
@@ -80,7 +79,7 @@ export const createUserToken = async (userId: string, organizationId: string, ro
 
 export const getToken = async (userId: string, type: string): Promise<Token | null> => {
     const id: string = `tokens.${userId}`;
-    const profile: Record<string, any> = await dynamoDBRetrieve(id, DYNAMO_DB_TABLE_NAME_PROFILE, REGION);
+    const profile: Record<string, any> = await dynamoDBRetrieve(id, DYNAMO_DB_TABLE_NAME_PROFILE);
     if (!profile) return null;
     const token: Token = find(profile.tokens, (t) => t.type == type);
     return token || null;
@@ -91,7 +90,7 @@ export const checkToken = async (token: string): Promise<Token | null> => {
     try {
         const userId = (await decryptToken(token)).split('|')[0];
         const id = `tokens.${userId}`;
-        const profile: Record<string, any> = await dynamoDBRetrieve(id, DYNAMO_DB_TABLE_NAME_PROFILE, REGION);
+        const profile: Record<string, any> = await dynamoDBRetrieve(id, DYNAMO_DB_TABLE_NAME_PROFILE);
         if (!profile) return null;
         const result: Token = find(profile.tokens, (t) => t.token == token);
         return result ? result : null;

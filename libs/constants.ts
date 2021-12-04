@@ -4,8 +4,6 @@
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
 import { HttpError } from './types';
-import { AWS_REGION } from 'douhub-helper-service';
-import { isNonEmptyString } from 'douhub-helper-util';
 
 export const ERROR_PARAMETER_MISSING = 'ERROR_PARAMETER_MISSING';
 export const ERROR_PARAMETER_INVALID = 'ERROR_PARAMETER_INVALID';
@@ -28,13 +26,6 @@ export const HTTPERROR_501: HttpError = { statusCode: 501, statusName: 'Not Impl
 export const HTTPERROR_502: HttpError = { statusCode: 502, statusName: 'Bad Gateway' };
 export const HTTPERROR_503: HttpError = { statusCode: 503, statusName: 'Service Unavailable' };
 export const HTTPERROR_504: HttpError = { statusCode: 504, statusName: 'Gateway Timeout' };
-
-export const SECRET_ID = `${process.env.RESOURCE_PREFIX}`;
-export const DYNAMO_DB_TABLE_NAME_PROFILE = `${process.env.RESOURCE_PREFIX}-profile`;
-export const CACHE_TABLE_NAME = `${process.env.RESOURCE_PREFIX}-cache`;
-export const S3_BUCKET_NAME_DATA = `${process.env.RESOURCE_PREFIX}-data`;
-export const REGION: AWS_REGION = isNonEmptyString(process.env.REGION) ? `${process.env.REGION}` : 'us-east-1';
-
 
 export const RATE_LIMIT_DURATION: number = process.env.RATE_LIMIT_DURATION ? parseInt(process.env.RATE_LIMIT_DURATION) : 1;
 export const RATE_LIMIT_POINTS_PER_SECOND: number = process.env.RATE_LIMIT_POINTS_PER_SECOND ? parseInt(process.env.RATE_LIMIT_POINTS_PER_SECOND) : 2;
