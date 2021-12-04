@@ -3,8 +3,8 @@
 //  This source code is licensed under the MIT license.
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
-import { getPropValueOfObject, getBooleanPropValue, isNonEmptyString, isGuid } from 'douhub-helper-util';
-import { isObject, find, isNil, isBoolean, isNumber, isArray } from 'lodash';
+import { getPropValueOfObject, isObject, isNonEmptyString, isGuid } from 'douhub-helper-util';
+import {  isNil, isBoolean, isNumber, isArray, isString } from 'lodash';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { LambdaError, LambdaResponse } from './types';
 import { ERROR_UNEXPECTED, RATE_LIMIT_DURATION, RATE_LIMIT_POINTS_PER_SECOND } from './constants';
@@ -47,7 +47,7 @@ export const getPropValueOfEvent = (event: any, name: string, defaultValue?: str
     return !isNil(v) ? v : (isNil(defaultValue) ? undefined : defaultValue);
 };
 
-export const getObjectValueOfEvent = (event: any, name: string, defaultValue?: object) => {
+export const getObjectValueOfEvent = (event: any, name: string, defaultValue?: Record<string,any>) => {
     if (!isObject(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     try {
@@ -92,14 +92,20 @@ export const getArrayPropValueOfEvent = (event: any, name: string, defaultValue?
 };
 
 //Render error result
-export const onError = (currentError?: LambdaError, innerError?: Record<string, any>): LambdaResponse => {
+export const onError = (currentError?: LambdaError, innerError?: any): LambdaResponse => {
 
     if (!isObject(currentError)) currentError = { statusCode: 500 };
     const error = { ...currentError };
+
+    
     if (isObject(innerError)) {
         if (innerError['statusCode']) error.statusCode = innerError['statusCode'];
         if (innerError['statusName']) error.statusName = innerError['statusName'];
         if (innerError['type'] && isNil(error.type)) error.type = innerError['type'];
+    }
+
+    if (isString(innerError)) {
+        error.statusName = innerError;
     }
 
     if (isNil(error.type)) error.type = ERROR_UNEXPECTED;
@@ -123,7 +129,7 @@ export const onError = (currentError?: LambdaError, innerError?: Record<string, 
 };
 
 //Render success result
-export const onSuccess = (data: object): LambdaResponse => {
+export const onSuccess = (data: Record<string,any>): LambdaResponse => {
     return {
         statusCode: 200,
         headers: {
