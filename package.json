@@ -18,9 +18,10 @@
     "axios": "^0.24.0",
     "crypto-js": "^4.1.1",
     "douhub-helper-service": "^1.0.12",
-    "douhub-helper-util": "^1.0.25",
+    "douhub-helper-util": "^1.0.26",
     "lodash": "^4.17.21",
-    "rate-limiter-flexible": "^2.3.5"
+    "rate-limiter-flexible": "^2.3.5",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.0.2",

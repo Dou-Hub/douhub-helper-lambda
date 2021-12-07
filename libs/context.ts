@@ -108,7 +108,7 @@ export const getContext = async (event: any, settings?: Record<string, any>): Pr
 
     if (!isObject(context)) context = await parseAccessToken(event);
 
-    // if (!isObject(context)) context = {};
+    if (!isObject(context)) context = {};
     // context.event = event;
 
     if (isNonEmptyString(context.userId) && !settings.skipUserProfile) {
