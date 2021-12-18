@@ -8,7 +8,6 @@ import {  isNil, isBoolean, isNumber, isArray, isString } from 'lodash';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { LambdaError, LambdaResponse } from './types';
 import { ERROR_UNEXPECTED, RATE_LIMIT_DURATION, RATE_LIMIT_POINTS_PER_SECOND } from './constants';
-import { DynamoDB } from 'aws-sdk';
 
 import { getSecretValue } from 'douhub-helper-service';
 import { S3 } from 'aws-sdk';
@@ -65,19 +64,19 @@ export const getGuidValueOfEvent = (event: any, name: string, defaultValue?: str
     return isGuid(val) ? val : defaultValue;
 };
 
-export const getIntValueOfEvent = (event: any, name: string, defaultValue?: Number) => {
+export const getIntValueOfEvent = (event: any, name: string, defaultValue?: number) => {
     if (!isNumber(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     return !isNaN(parseInt(val)) ? parseInt(val) : defaultValue;
 };
 
-export const getFloatValueOfEvent = (event: any, name: string, defaultValue?: Number) => {
+export const getFloatValueOfEvent = (event: any, name: string, defaultValue?: number) => {
     if (!isNumber(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     return !isNaN(parseFloat(val)) ? parseFloat(val) : defaultValue;
 };
 
-export const getBooleanValueOfEvent = (event: any, name: string, defaultValue?: Boolean) => {
+export const getBooleanValueOfEvent = (event: any, name: string, defaultValue?: boolean) => {
     if (!isBoolean(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     if (`${val}`.toLowerCase() == 'true') return true;

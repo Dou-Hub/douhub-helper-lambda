@@ -78,7 +78,7 @@ export const parseAccessToken = async (event: any) => {
         }
 
     }
-
+    console.log('Missing user token record');
     return null;
 };
 
@@ -105,17 +105,30 @@ export const getContext = async (event: any, settings?: Record<string, any>): Pr
 
     if (!isObject(settings)) settings = {};
     let context = await parseApiToken(event);
-
-    if (!isObject(context)) context = await parseAccessToken(event);
-
-    if (!isObject(context)) context = {};
-    // context.event = event;
-
-    if (isNonEmptyString(context.userId) && !settings.skipUserProfile) {
-        context.user = await dynamoDBRetrieve(`user.${context.userId}`, DYNAMO_DB_TABLE_NAME_PROFILE, AWS_REGION);
-        if (isObject(context.user)) context.user.id = context.userId;
+    const log: Record<string,any> = {};
+    if (!isObject(context)) {
+        log.parseApiToken = false;
+        context = await parseAccessToken(event);
     }
 
+    if (!isObject(context)) {
+        log.parseAccessToken = false;
+    }
+    // context.event = event;
+    if (!isObject(context)) context = {};
+    if (isNonEmptyString(context.userId) && !settings.skipUserProfile) {
+        context.user = await dynamoDBRetrieve(`user.${context.userId}`, DYNAMO_DB_TABLE_NAME_PROFILE, AWS_REGION);
+        if (isObject(context.user)) 
+        {
+            context.user.id = context.userId;
+        }
+        else
+        {
+            log.retrieveUser = false;
+        }
+    }
+    
+    context.log = log;
     return context;
 };
 
