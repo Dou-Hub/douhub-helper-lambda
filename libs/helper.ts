@@ -35,8 +35,6 @@ export const checkRateLimit = async (sourceIp: string, apiName?: string, points?
     }
 };
 
-
-
 export const getPropValueOfEvent = (event: any, name: string, defaultValue?: string) => {
 
     let v = getPropValueOfObject(event.headers, name);
@@ -46,7 +44,7 @@ export const getPropValueOfEvent = (event: any, name: string, defaultValue?: str
     return !isNil(v) ? v : (isNil(defaultValue) ? undefined : defaultValue);
 };
 
-export const getObjectValueOfEvent = (event: any, name: string, defaultValue?: Record<string,any>) => {
+export const getObjectValueOfEvent = (event: any, name: string, defaultValue?: Record<string,any>): Record<string,any>|undefined => {
     if (!isObject(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     try {
@@ -58,25 +56,25 @@ export const getObjectValueOfEvent = (event: any, name: string, defaultValue?: R
     return undefined;
 };
 
-export const getGuidValueOfEvent = (event: any, name: string, defaultValue?: string) => {
+export const getGuidValueOfEvent = (event: any, name: string, defaultValue?: string): string|undefined => {
     if (!isGuid(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     return isGuid(val) ? val : defaultValue;
 };
 
-export const getIntValueOfEvent = (event: any, name: string, defaultValue?: number) => {
+export const getIntValueOfEvent = (event: any, name: string, defaultValue?: number): number|undefined => {
     if (!isNumber(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     return !isNaN(parseInt(val)) ? parseInt(val) : defaultValue;
 };
 
-export const getFloatValueOfEvent = (event: any, name: string, defaultValue?: number) => {
+export const getFloatValueOfEvent = (event: any, name: string, defaultValue?: number): number|undefined => {
     if (!isNumber(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     return !isNaN(parseFloat(val)) ? parseFloat(val) : defaultValue;
 };
 
-export const getBooleanValueOfEvent = (event: any, name: string, defaultValue?: boolean) => {
+export const getBooleanValueOfEvent = (event: any, name: string, defaultValue?: boolean): boolean|undefined => {
     if (!isBoolean(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     if (`${val}`.toLowerCase() == 'true') return true;
@@ -84,7 +82,7 @@ export const getBooleanValueOfEvent = (event: any, name: string, defaultValue?: 
     return defaultValue;
 };
 
-export const getArrayPropValueOfEvent = (event: any, name: string, defaultValue?: []) => {
+export const getArrayPropValueOfEvent = (event: any, name: string, defaultValue?: []): Array<string>|undefined => {
     if (!isArray(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     return isArray(val) ? val : isNonEmptyString(val) ? JSON.parse(val) : defaultValue;
