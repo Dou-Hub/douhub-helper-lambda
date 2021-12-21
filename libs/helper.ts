@@ -4,7 +4,7 @@
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
 import { getPropValueOfObject, isObject, isNonEmptyString, isGuid } from 'douhub-helper-util';
-import {  isNil, isBoolean, isNumber, isArray, isString } from 'lodash';
+import { isNil, isBoolean, isNumber, isArray, isString } from 'lodash';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { LambdaError, LambdaResponse } from './types';
 import { ERROR_UNEXPECTED, RATE_LIMIT_DURATION, RATE_LIMIT_POINTS_PER_SECOND } from './constants';
@@ -44,7 +44,7 @@ export const getPropValueOfEvent = (event: any, name: string, defaultValue?: str
     return !isNil(v) ? v : (isNil(defaultValue) ? undefined : defaultValue);
 };
 
-export const getObjectValueOfEvent = (event: any, name: string, defaultValue?: Record<string,any>): Record<string,any>|undefined => {
+export const getObjectValueOfEvent = (event: any, name: string, defaultValue?: Record<string, any>): Record<string, any> | undefined => {
     if (!isObject(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     try {
@@ -56,25 +56,25 @@ export const getObjectValueOfEvent = (event: any, name: string, defaultValue?: R
     return undefined;
 };
 
-export const getGuidValueOfEvent = (event: any, name: string, defaultValue?: string): string|undefined => {
+export const getGuidValueOfEvent = (event: any, name: string, defaultValue?: string): string | undefined => {
     if (!isGuid(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     return isGuid(val) ? val : defaultValue;
 };
 
-export const getIntValueOfEvent = (event: any, name: string, defaultValue?: number): number|undefined => {
+export const getIntValueOfEvent = (event: any, name: string, defaultValue?: number): number | undefined => {
     if (!isNumber(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     return !isNaN(parseInt(val)) ? parseInt(val) : defaultValue;
 };
 
-export const getFloatValueOfEvent = (event: any, name: string, defaultValue?: number): number|undefined => {
+export const getFloatValueOfEvent = (event: any, name: string, defaultValue?: number): number | undefined => {
     if (!isNumber(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     return !isNaN(parseFloat(val)) ? parseFloat(val) : defaultValue;
 };
 
-export const getBooleanValueOfEvent = (event: any, name: string, defaultValue?: boolean): boolean|undefined => {
+export const getBooleanValueOfEvent = (event: any, name: string, defaultValue?: boolean): boolean | undefined => {
     if (!isBoolean(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     if (`${val}`.toLowerCase() == 'true') return true;
@@ -82,7 +82,7 @@ export const getBooleanValueOfEvent = (event: any, name: string, defaultValue?: 
     return defaultValue;
 };
 
-export const getArrayPropValueOfEvent = (event: any, name: string, defaultValue?: []): Array<string>|undefined => {
+export const getArrayPropValueOfEvent = (event: any, name: string, defaultValue?: []): Array<string> | undefined => {
     if (!isArray(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     return isArray(val) ? val : isNonEmptyString(val) ? JSON.parse(val) : defaultValue;
@@ -94,7 +94,7 @@ export const onError = (currentError?: LambdaError, innerError?: any): LambdaRes
     if (!isObject(currentError)) currentError = { statusCode: 500 };
     const error = { ...currentError };
 
-    
+
     if (isObject(innerError)) {
         if (innerError['statusCode']) error.statusCode = innerError['statusCode'];
         if (innerError['statusName']) error.statusName = innerError['statusName'];
@@ -119,19 +119,21 @@ export const onError = (currentError?: LambdaError, innerError?: any): LambdaRes
         statusName: error.statusName,
         headers: {
             "Access-Control-Allow-Origin": "*",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
         },
         body: JSON.stringify(error)
     };
 };
 
 //Render success result
-export const onSuccess = (data: Record<string,any>): LambdaResponse => {
+export const onSuccess = (data: Record<string, any>): LambdaResponse => {
     return {
         statusCode: 200,
         headers: {
             "Access-Control-Allow-Origin": "*",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
         },
         body: JSON.stringify(data)
     };

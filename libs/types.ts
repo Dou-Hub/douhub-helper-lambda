@@ -5,7 +5,8 @@
 
 export type LambdaHeaderOption = {
     'Access-Control-Allow-Origin': string;
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    "Access-Control-Allow-Methods": "OPTIONS,POST,GET,PUT"
 }
 
 export type LambdaError = {
