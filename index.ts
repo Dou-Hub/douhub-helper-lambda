@@ -60,6 +60,15 @@ export {
 } from './libs/context';
 
 export {
+    getToken,
+    encryptToken,
+    decryptToken,
+    checkToken,
+    createUserToken,
+    createToken
+} from './libs/token';
+
+export {
     LambdaHeaderOption,
     LambdaError,
     LambdaResponse,

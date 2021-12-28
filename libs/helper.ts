@@ -13,16 +13,13 @@ import { APIGatewayProxyEvent } from 'aws-lambda';
 import { getSecretValue } from 'douhub-helper-service';
 import { S3 } from 'aws-sdk';
 
-// const _dynamoDb = new DynamoDB.DocumentClient({ region: process.env.REGION });
-
-
 export const checkRateLimit = async (sourceIp: string, apiName?: string, points?: number) => {
 
     const callerId = `${sourceIp}-${apiName}`;
     if (_track) console.log({ apiName, points });
     try {
         if (!_process.rateLimiter) _process.rateLimiter = new RateLimiterMemory({
-            points: isNonEmptyString(process.env.RATE_LIMIT_POINTS_PER_SECOND) ? parseInt(`${process.env.RATE_LIMIT_POINTS_PER_SECOND}`) : RATE_LIMIT_POINTS_PER_SECOND,
+            points: isNonEmptyString(_process.env.RATE_LIMIT_POINTS_PER_SECOND) ? parseInt(`${_process.env.RATE_LIMIT_POINTS_PER_SECOND}`) : RATE_LIMIT_POINTS_PER_SECOND,
             duration: RATE_LIMIT_DURATION, // Per second
         });
 
