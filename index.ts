@@ -9,6 +9,9 @@ export {
     ERROR_TOO_MANY_REQUESTS,
     ERROR_AUTH_FAILED,
     ERROR_UNEXPECTED,
+    ERROR_S3,
+    ERROR_COSMOS_DB,
+    ERROR_DYNAMO_DB,
 
     HTTPERROR_400,
     HTTPERROR_401,
@@ -64,3 +67,9 @@ export {
     HttpError,
     Token
 } from './libs/types';
+
+
+export {
+    sendAction,
+    sendMessage
+} from './libs/util';

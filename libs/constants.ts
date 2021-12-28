@@ -10,6 +10,9 @@ export const ERROR_PARAMETER_INVALID = 'ERROR_PARAMETER_INVALID';
 export const ERROR_TOO_MANY_REQUESTS = 'ERROR_TOO_MANY_REQUESTS';
 export const ERROR_AUTH_FAILED = 'ERROR_AUTH_FAILED';
 export const ERROR_UNEXPECTED = 'ERROR_UNEXPECTED';
+export const ERROR_S3= 'ERROR_S3';
+export const ERROR_COSMOS_DB= 'ERROR_COSMOS_DB';
+export const ERROR_DYNAMO_DB= 'ERROR_DYNAMO_DB';
 
 export const HTTPERROR_400: HttpError = { statusCode: 400, statusName: 'Bad Request' };
 export const HTTPERROR_401: HttpError = { statusCode: 401, statusName: 'Unauthorized' };
