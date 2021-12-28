@@ -3,34 +3,36 @@
 //  This source code is licensed under the MIT license.
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
-import { getPropValueOfObject, isObject, isNonEmptyString, isGuid } from 'douhub-helper-util';
+import { getPropValueOfObject, isObject, isNonEmptyString, isGuid, _process, _track, getWebLocation } from 'douhub-helper-util';
 import { isNil, isBoolean, isNumber, isArray, isString } from 'lodash';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { LambdaError, LambdaResponse } from './types';
 import { ERROR_UNEXPECTED, RATE_LIMIT_DURATION, RATE_LIMIT_POINTS_PER_SECOND } from './constants';
 
+import { APIGatewayProxyEvent } from 'aws-lambda';
 import { getSecretValue } from 'douhub-helper-service';
 import { S3 } from 'aws-sdk';
 
 // const _dynamoDb = new DynamoDB.DocumentClient({ region: process.env.REGION });
 
-const _rateLimiter = new RateLimiterMemory({
-    points: isNonEmptyString(process.env.RATE_LIMIT_POINTS_PER_SECOND) ? parseInt(`${process.env.RATE_LIMIT_POINTS_PER_SECOND}`) : RATE_LIMIT_POINTS_PER_SECOND,
-    duration: RATE_LIMIT_DURATION, // Per second
-});
 
 export const checkRateLimit = async (sourceIp: string, apiName?: string, points?: number) => {
 
     const callerId = `${sourceIp}-${apiName}`;
-    console.log({ apiName, points });
+    if (_track) console.log({ apiName, points });
     try {
-        await _rateLimiter.consume(callerId, isNumber(points) ? points : 2); // consume points
+        if (!_process.rateLimiter) _process.rateLimiter = new RateLimiterMemory({
+            points: isNonEmptyString(process.env.RATE_LIMIT_POINTS_PER_SECOND) ? parseInt(`${process.env.RATE_LIMIT_POINTS_PER_SECOND}`) : RATE_LIMIT_POINTS_PER_SECOND,
+            duration: RATE_LIMIT_DURATION, // Per second
+        });
+
+        await _process.rateLimiter.consume(callerId, isNumber(points) ? points : 2); // consume points
         return true;
     }
     catch (ex) {
         // Not enough points to consume
         console.error(ex);
-        console.log('Bad Caller', callerId);
+        if (_track) console.log('Bad Caller', callerId);
         return false;
     }
 };
@@ -51,7 +53,7 @@ export const getObjectValueOfEvent = (event: any, name: string, defaultValue?: R
         return isObject(val) ? val : (isNonEmptyString(val) ? JSON.parse(val) : defaultValue);
     }
     catch (error) {
-        console.error({ error, name, defaultValue, val });
+        if (_track) console.error({ error, name, defaultValue, val });
     }
     return undefined;
 };
@@ -139,21 +141,35 @@ export const onSuccess = (data: Record<string, any>): LambdaResponse => {
     };
 };
 
-
-let _s3Uploader: any = null;
 export const s3Uploader = async () => {
 
-    if (!_s3Uploader) {
+    if (!_process.s3Uploader) {
 
         const s3UploaderSecret = (await getSecretValue('S3_UPLOADER')).split("|");
 
-        _s3Uploader = new S3({
+        _process.s3Uploader = new S3({
             region: process.env.REGION,
             accessKeyId: s3UploaderSecret[0],
             secretAccessKey: s3UploaderSecret[1]
         });
     }
 
-    return _s3Uploader;
+    return _process.s3Uploader;
 };
 
+
+export const getDomain = (event: APIGatewayProxyEvent, skipQueryValue: boolean) => {
+
+    let domain = null;
+    if (skipQueryValue) domain = getPropValueOfEvent(event, "domain");
+    if (!isNonEmptyString(domain)) domain = getPropValueOfEvent(event, "origin");
+    if (!isNonEmptyString(domain)) domain = getPropValueOfEvent(event, "referer");
+
+    //try to get domain name from the origin header
+    if (isNonEmptyString(domain)) {
+        const location = getWebLocation(domain);
+        if (location) domain = location.host;
+    }
+
+    return domain;
+};
