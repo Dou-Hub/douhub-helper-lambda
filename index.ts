@@ -46,7 +46,8 @@ export {
     getArrayPropValueOfEvent,
     onError,
     onSuccess,
-    s3Uploader
+    s3Uploader,
+    getDomain
 } from './libs/helper';
 
 export {
