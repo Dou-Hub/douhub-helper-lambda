@@ -1373,20 +1373,20 @@ domexception@^2.0.1:
   dependencies:
     webidl-conversions "^5.0.0"
 
-douhub-helper-service@^1.0.17:
-  version "1.0.17"
-  resolved "https://registry.yarnpkg.com/douhub-helper-service/-/douhub-helper-service-1.0.17.tgz#6982efa10e8760edc81065a987697585208952bc"
-  integrity sha512-inkgpPyUfdpcozIIg9M4m7LKgzOQWw/xdWhdbksBystOnc5yYk3GeucQh3Mr6ctwx5kl7R51Zg4fk15TT6Xb+Q==
+douhub-helper-service@^1.0.26:
+  version "1.0.26"
+  resolved "https://registry.yarnpkg.com/douhub-helper-service/-/douhub-helper-service-1.0.26.tgz#77804acf912b24d78aded6f74751ea902bb0222c"
+  integrity sha512-AunCEF/lL+9KxOxTJt93hjkafirRlpQrczwNoONvBDjoSkJAgN4WnsZT06bScxiK7sktLxKVMVpJEYdDSLwyJg==
   dependencies:
     "@azure/cosmos" "^3.14.1"
     aws-sdk "^2.1033.0"
-    douhub-helper-util "^1.0.35"
+    douhub-helper-util "^1.0.36"
     lodash "^4.17.21"
 
-douhub-helper-util@^1.0.35:
-  version "1.0.35"
-  resolved "https://registry.yarnpkg.com/douhub-helper-util/-/douhub-helper-util-1.0.35.tgz#1c461e85397d586098b4034ec15e94a50c0c3d3b"
-  integrity sha512-90u1FtzUM1D3UU2X81sDsozcsRxqQhuBRYrbugFzX7rdmiWqwCpqIYbE+66hDpQY43iBEa8iwSM8yfHkoiEv5Q==
+douhub-helper-util@^1.0.36:
+  version "1.0.36"
+  resolved "https://registry.yarnpkg.com/douhub-helper-util/-/douhub-helper-util-1.0.36.tgz#91d330e512ac90fc9042112d132e77eda7df2168"
+  integrity sha512-ikS4P7h0aiV4FuPeFppSWfTFaaijB8Hj5LElY/7s/Pkl/cj9tvc0h64xUFpFPrx7TtYL2YYsGUo/TsaHELZkjg==
   dependencies:
     is-url "^1.2.4"
     js-base64 "^3.7.2"

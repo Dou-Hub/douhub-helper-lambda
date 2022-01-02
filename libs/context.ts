@@ -127,6 +127,18 @@ export const getContext = async (event: any, settings?: Record<string, any>): Pr
             log.retrieveUser = false;
         }
     }
+
+    if (isNonEmptyString(context.organizationId) && !settings.skipOrganizationProfile) {
+        context.organization = await dynamoDBRetrieve(`organization.${context.organizationId}`, DYNAMO_DB_TABLE_NAME_PROFILE, AWS_REGION);
+        if (isObject(context.organization)) 
+        {
+            context.organization.id = context.organizationId;
+        }
+        else
+        {
+            log.retrieveOrganization = false;
+        }
+    }
     
     context.log = log;
     return context;
@@ -147,7 +159,24 @@ export const getSolution = async (solutionId: string) => {
 
 export const checkCaller = async (event: any, settings: CheckCallerSettings): Promise<CheckCallerResult> => {
 
-    const { needSolution, verifyReCaptcha } = settings;
+    const { verifyReCaptcha } = settings;
+
+    //Get recaptchaToken submitted
+    const recaptchaToken = getPropValueOfEvent(event, 'recaptchaToken');
+    const sourceIp = event.identity && event.identity.sourceIp;
+
+    if (event.source == "aws.events") {
+        settings.ignoreRateLimit = true;
+        settings.ignoreAuthentication = true;
+        settings.ignoreAuthorization = true;
+        settings.needSolution = true;
+        settings.skipUserProfile = true;
+        settings.skipOrganizationProfile = true;
+        settings.verifyReCaptcha = false;
+        return settings.stopAWSEvent ? { type: 'STOP' } : { type: 'CONTINUE' };
+    }
+
+    const needSolution = settings.needSolution || settings.ignoreAuthorization || verifyReCaptcha && isNonEmptyString(recaptchaToken);
 
     const solutionId = getPropValueOfEvent(event, 'solutionId');
     if (!isNonEmptyString(solutionId) && needSolution) {
@@ -161,20 +190,11 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
         };
     }
 
-    if (event.source == "aws.events") {
-        settings.ignoreRateLimit = true;
-        settings.ignoreAuth = true;
-        settings.needSolution = true;
-        settings.verifyReCaptcha = false;
-        return settings.stopAWSEvent ? { type: 'STOP' } : { type: 'CONTINUE' };
-    }
-
     const result: CheckCallerResult = { context: {}, type: 'CONTINUE' };
 
-    //Get recaptchaToken submitted
-    const recaptchaToken = getPropValueOfEvent(event, 'recaptchaToken');
-    const sourceIp = event.identity && event.identity.sourceIp;
-
+    settings.skipOrganizationProfile = settings.skipOrganizationProfile==true && settings.ignoreAuthorization==true;
+    settings.skipUserProfile = settings.skipUserProfile==true && settings.ignoreAuthorization==true;
+    
     //check the rate limit
     if (!settings.ignoreRateLimit && !(await checkRateLimit(sourceIp, settings.apiName, settings.apiPoints))) {
         return {
@@ -191,7 +211,7 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
     }
 
     //need authentication & therefore get user context
-    if (!settings.ignoreAuth) {
+    if (!(settings.ignoreAuthentication && settings.ignoreAuthorization)) {
         result.context = await getContext(event, settings);
         if (!isNonEmptyString(result.context.userId)) {
             return {
@@ -208,8 +228,8 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
         }
     }
 
-    //if needSolution=true or verify ReCaptcha, we will need to get solution profile
-    if (needSolution || verifyReCaptcha && isNonEmptyString(recaptchaToken)) {
+    //if skipSolution!=true or verify ReCaptcha, we will need to get solution profile
+    if (needSolution) {
         result.context.solution = await getSolution(solutionId);
         if (!isObject(result.context.solution)) {
             return {
