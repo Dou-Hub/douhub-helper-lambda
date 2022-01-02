@@ -167,19 +167,22 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
 
     if (event.source == "aws.events") {
         settings.ignoreRateLimit = true;
-        settings.ignoreAuthentication = true;
-        settings.ignoreAuthorization = true;
-        settings.needSolution = true;
+        settings.needAuthentication = false;
+        settings.needAuthorization = false;
+        settings.needSolution = false;
         settings.skipUserProfile = true;
         settings.skipOrganizationProfile = true;
         settings.verifyReCaptcha = false;
         return settings.stopAWSEvent ? { type: 'STOP' } : { type: 'CONTINUE' };
     }
 
-    const needSolution = settings.needSolution || settings.ignoreAuthorization || verifyReCaptcha && isNonEmptyString(recaptchaToken);
-
+    settings.needSolution = settings.needSolution || settings.needAuthorization || verifyReCaptcha && isNonEmptyString(recaptchaToken);
+    settings.needAuthentication = settings.needAuthentication || settings.needAuthorization;
+    settings.skipOrganizationProfile = settings.skipOrganizationProfile && !settings.needAuthorization;
+    settings.skipUserProfile = settings.skipUserProfile && !settings.needAuthorization;
+   
     const solutionId = getPropValueOfEvent(event, 'solutionId');
-    if (!isNonEmptyString(solutionId) && needSolution) {
+    if (!isNonEmptyString(solutionId) && settings.needSolution) {
         return {
             type: 'ERROR', error: {
                 ...HTTPERROR_400,
@@ -192,9 +195,6 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
 
     const result: CheckCallerResult = { context: {}, type: 'CONTINUE' };
 
-    settings.skipOrganizationProfile = settings.skipOrganizationProfile==true && settings.ignoreAuthorization==true;
-    settings.skipUserProfile = settings.skipUserProfile==true && settings.ignoreAuthorization==true;
-    
     //check the rate limit
     if (!settings.ignoreRateLimit && !(await checkRateLimit(sourceIp, settings.apiName, settings.apiPoints))) {
         return {
@@ -211,7 +211,7 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
     }
 
     //need authentication & therefore get user context
-    if (!(settings.ignoreAuthentication && settings.ignoreAuthorization)) {
+    if (settings.needAuthentication || settings.needAuthorization) {
         result.context = await getContext(event, settings);
         if (!isNonEmptyString(result.context.userId)) {
             return {
@@ -229,7 +229,7 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
     }
 
     //if skipSolution!=true or verify ReCaptcha, we will need to get solution profile
-    if (needSolution) {
+    if (settings.needSolution) {
         result.context.solution = await getSolution(solutionId);
         if (!isObject(result.context.solution)) {
             return {
@@ -278,6 +278,8 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
             }
         }
     }
+
+    result.context.event = event;
 
     return result;
 };

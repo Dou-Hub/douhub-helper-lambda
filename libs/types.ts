@@ -29,8 +29,8 @@ export type CheckCallerSettings = {
     apiName?: string,
     apiPoints?: number
     stopAWSEvent?: boolean,
-    ignoreAuthentication?: boolean,
-    ignoreAuthorization?:boolean,
+    needAuthentication?: boolean,
+    needAuthorization?:boolean,
     verifyReCaptcha?: boolean,
     ignoreRateLimit?: boolean,
     skipUserProfile?: boolean,

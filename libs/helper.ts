@@ -9,7 +9,6 @@ import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { LambdaError, LambdaResponse } from './types';
 import { ERROR_UNEXPECTED, RATE_LIMIT_DURATION, RATE_LIMIT_POINTS_PER_SECOND } from './constants';
 
-import { APIGatewayProxyEvent } from 'aws-lambda';
 import { getSecretValue } from 'douhub-helper-service';
 import { S3 } from 'aws-sdk';
 
@@ -155,7 +154,7 @@ export const s3Uploader = async () => {
 };
 
 
-export const getDomain = (event: APIGatewayProxyEvent, skipQueryValue: boolean) => {
+export const getDomain = (event: any, skipQueryValue: boolean) => {
 
     let domain = null;
     if (skipQueryValue) domain = getPropValueOfEvent(event, "domain");
