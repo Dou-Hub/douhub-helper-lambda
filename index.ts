@@ -87,5 +87,11 @@ export {
 
 export {
     sendAction,
-    sendMessage
+    sendMessage,
+    processSNSRecords,
+    getActionDataFromSNSRecord,
+    validateActionDataFromSNSRecord,
+    callFromAWSEvents
 } from './libs/util';
+
+

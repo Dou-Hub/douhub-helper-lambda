@@ -1373,10 +1373,10 @@ domexception@^2.0.1:
   dependencies:
     webidl-conversions "^5.0.0"
 
-douhub-helper-service@^1.0.26:
-  version "1.0.26"
-  resolved "https://registry.yarnpkg.com/douhub-helper-service/-/douhub-helper-service-1.0.26.tgz#77804acf912b24d78aded6f74751ea902bb0222c"
-  integrity sha512-AunCEF/lL+9KxOxTJt93hjkafirRlpQrczwNoONvBDjoSkJAgN4WnsZT06bScxiK7sktLxKVMVpJEYdDSLwyJg==
+douhub-helper-service@^1.0.28:
+  version "1.0.28"
+  resolved "https://registry.yarnpkg.com/douhub-helper-service/-/douhub-helper-service-1.0.28.tgz#40c17b6dc9f8248990bf1ae77b45e7462e2b0621"
+  integrity sha512-wUi18O+/tedLK55lCKGJkK2fuYoqI/r2/LD5WK0vvFZZ4lAjrsr38Dqz2Am8dQ8rIZiOdsC0eMjSlInOIAEQIQ==
   dependencies:
     "@azure/cosmos" "^3.14.1"
     aws-sdk "^2.1033.0"
@@ -1388,6 +1388,19 @@ douhub-helper-util@^1.0.36:
   resolved "https://registry.yarnpkg.com/douhub-helper-util/-/douhub-helper-util-1.0.36.tgz#91d330e512ac90fc9042112d132e77eda7df2168"
   integrity sha512-ikS4P7h0aiV4FuPeFppSWfTFaaijB8Hj5LElY/7s/Pkl/cj9tvc0h64xUFpFPrx7TtYL2YYsGUo/TsaHELZkjg==
   dependencies:
+    is-url "^1.2.4"
+    js-base64 "^3.7.2"
+    libphonenumber-js "^1.9.42"
+    lodash "^4.17.21"
+    slugify "^1.6.4"
+    uuid "^8.3.2"
+
+douhub-helper-util@^1.0.37:
+  version "1.0.37"
+  resolved "https://registry.yarnpkg.com/douhub-helper-util/-/douhub-helper-util-1.0.37.tgz#101bc5ecac1860e065f5e9af9834572f80c61138"
+  integrity sha512-/jrOoRpbUj7dgbWfnnnrT1QospPLdr7fPK0U4oTunAWhFBOFZF2mDH+5xoEuyEIQpeMh6S8XuaopQQWmlPH/ww==
+  dependencies:
+    axios "^0.24.0"
     is-url "^1.2.4"
     js-base64 "^3.7.2"
     libphonenumber-js "^1.9.42"
