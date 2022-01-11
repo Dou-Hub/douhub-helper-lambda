@@ -167,7 +167,7 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
 
     if (event.source == "aws.events") {
         settings.ignoreRateLimit = true;
-        settings.needAuthentication = false;
+        settings.skipAuthentication = false;
         settings.needAuthorization = false;
         settings.needSolution = false;
         settings.skipUserProfile = true;
@@ -177,7 +177,7 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
     }
 
     settings.needSolution = settings.needSolution || settings.needAuthorization || verifyReCaptcha && isNonEmptyString(recaptchaToken);
-    settings.needAuthentication = settings.needAuthentication || settings.needAuthorization;
+    settings.skipAuthentication = settings.skipAuthentication && !settings.needAuthorization;
     settings.skipOrganizationProfile = settings.skipOrganizationProfile && !settings.needAuthorization;
     settings.skipUserProfile = settings.skipUserProfile && !settings.needAuthorization;
    
@@ -211,7 +211,7 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
     }
 
     //need authentication & therefore get user context
-    if (settings.needAuthentication || settings.needAuthorization) {
+    if (!settings.skipAuthentication || settings.needAuthorization) {
         result.context = await getContext(event, settings);
         if (!isNonEmptyString(result.context.userId)) {
             return {
@@ -227,6 +227,7 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
             }
         }
     }
+    
 
     //if skipSolution!=true or verify ReCaptcha, we will need to get solution profile
     if (settings.needSolution) {
