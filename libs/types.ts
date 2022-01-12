@@ -33,8 +33,8 @@ export type CheckCallerSettings = {
     needAuthorization?:boolean,
     verifyReCaptcha?: boolean,
     ignoreRateLimit?: boolean,
-    skipUserProfile?: boolean,
-    skipOrganizationProfile?: boolean,
+    needUserProfile?: boolean,
+    needOrganizationProfile?: boolean,
     needSolution?: boolean
 }
 

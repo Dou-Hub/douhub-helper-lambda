@@ -4,7 +4,7 @@
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
 import { isNonEmptyString } from 'douhub-helper-util';
-import { s3Get, dynamoDBRetrieve,  } from 'douhub-helper-service';
+import { s3Get, dynamoDBRetrieve } from 'douhub-helper-service';
 import { isObject } from 'lodash';
 import { checkToken, getToken } from './token';
 import {
@@ -16,7 +16,7 @@ import { CheckCallerSettings, CheckCallerResult } from './types';
 import { CognitoIdentityServiceProvider } from 'aws-sdk';
 import { getPropValueOfEvent, checkRateLimit } from './helper';
 import axios from 'axios';
-import { getSecretValue, AWS_REGION,  S3_BUCKET_NAME_DATA, DYNAMO_DB_TABLE_NAME_PROFILE} from 'douhub-helper-service';
+import { getSecretValue, AWS_REGION, S3_BUCKET_NAME_DATA, DYNAMO_DB_TABLE_NAME_PROFILE } from 'douhub-helper-service';
 
 const _cognitoIdentityServiceProvider = new CognitoIdentityServiceProvider();
 
@@ -65,13 +65,11 @@ export const parseAccessToken = async (event: any) => {
 
             //Try to get user token, because it has roles & licenses
             const userToken = await getToken(userId, 'user');
-            if (!userToken) 
-            {
+            if (!userToken) {
                 console.error('Missing user token record');
                 return null;
             }
-            else
-            {
+            else {
                 const { roles, licenses } = userToken.data;
                 return { accessToken, userId, organizationId, roles, licenses };
             }
@@ -105,7 +103,7 @@ export const getContext = async (event: any, settings?: Record<string, any>): Pr
 
     if (!isObject(settings)) settings = {};
     let context = await parseApiToken(event);
-    const log: Record<string,any> = {};
+    const log: Record<string, any> = {};
     if (!isObject(context)) {
         log.parseApiToken = false;
         context = await parseAccessToken(event);
@@ -116,30 +114,26 @@ export const getContext = async (event: any, settings?: Record<string, any>): Pr
     }
     // context.event = event;
     if (!isObject(context)) context = {};
-    if (isNonEmptyString(context.userId) && !settings.skipUserProfile) {
+    if (isNonEmptyString(context.userId) && settings.needUserProfile) {
         context.user = await dynamoDBRetrieve(`user.${context.userId}`, DYNAMO_DB_TABLE_NAME_PROFILE, AWS_REGION);
-        if (isObject(context.user)) 
-        {
+        if (isObject(context.user)) {
             context.user.id = context.userId;
         }
-        else
-        {
+        else {
             log.retrieveUser = false;
         }
     }
 
-    if (isNonEmptyString(context.organizationId) && !settings.skipOrganizationProfile) {
+    if (isNonEmptyString(context.organizationId) && settings.needOrganizationProfile) {
         context.organization = await dynamoDBRetrieve(`organization.${context.organizationId}`, DYNAMO_DB_TABLE_NAME_PROFILE, AWS_REGION);
-        if (isObject(context.organization)) 
-        {
+        if (isObject(context.organization)) {
             context.organization.id = context.organizationId;
         }
-        else
-        {
+        else {
             log.retrieveOrganization = false;
         }
     }
-    
+
     context.log = log;
     return context;
 };
@@ -170,17 +164,17 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
         settings.skipAuthentication = false;
         settings.needAuthorization = false;
         settings.needSolution = false;
-        settings.skipUserProfile = true;
-        settings.skipOrganizationProfile = true;
+        settings.needUserProfile = false;
+        settings.needOrganizationProfile = false;
         settings.verifyReCaptcha = false;
         return settings.stopAWSEvent ? { type: 'STOP' } : { type: 'CONTINUE' };
     }
 
     settings.needSolution = settings.needSolution || settings.needAuthorization || verifyReCaptcha && isNonEmptyString(recaptchaToken);
     settings.skipAuthentication = settings.skipAuthentication && !settings.needAuthorization;
-    settings.skipOrganizationProfile = settings.skipOrganizationProfile && !settings.needAuthorization;
-    settings.skipUserProfile = settings.skipUserProfile && !settings.needAuthorization;
-   
+    settings.needOrganizationProfile = settings.needOrganizationProfile || settings.needAuthorization;
+    settings.needUserProfile = settings.needUserProfile || settings.needAuthorization;
+
     const solutionId = getPropValueOfEvent(event, 'solutionId');
     if (!isNonEmptyString(solutionId) && settings.needSolution) {
         return {
@@ -193,7 +187,7 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
         };
     }
 
-    const result: CheckCallerResult = { context: {}, type: 'CONTINUE' };
+    const result: CheckCallerResult = { context: { solutionId }, type: 'CONTINUE' };
 
     //check the rate limit
     if (!settings.ignoreRateLimit && !(await checkRateLimit(sourceIp, settings.apiName, settings.apiPoints))) {
@@ -227,7 +221,7 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
             }
         }
     }
-    
+
 
     //if skipSolution!=true or verify ReCaptcha, we will need to get solution profile
     if (settings.needSolution) {
