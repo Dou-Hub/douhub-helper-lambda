@@ -3,7 +3,7 @@
 //  This source code is licensed under the MIT license.
 //  The detail information can be found in the LICENSE file in the root directory of this source tree.
 
-import { isNonEmptyString } from 'douhub-helper-util';
+import { isNonEmptyString, _track } from 'douhub-helper-util';
 import { s3Get, dynamoDBRetrieve } from 'douhub-helper-service';
 import { isObject } from 'lodash';
 import { checkToken, getToken } from './token';
@@ -176,7 +176,8 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
     settings.needUserProfile = settings.needUserProfile || settings.needAuthorization;
 
     const solutionId = getPropValueOfEvent(event, 'solutionId');
-    if (!isNonEmptyString(solutionId) && settings.needSolution) {
+    if (!isNonEmptyString(solutionId)) {
+        if (_track) console.log({event: JSON.stringify(event)});
         return {
             type: 'ERROR', error: {
                 ...HTTPERROR_400,
@@ -206,7 +207,8 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
 
     //need authentication & therefore get user context
     if (!settings.skipAuthentication || settings.needAuthorization) {
-        result.context = await getContext(event, settings);
+        result.context = {...result.context, ... (await getContext(event, settings))};
+    
         if (!isNonEmptyString(result.context.userId)) {
             return {
                 type: 'ERROR', error: {
@@ -275,6 +277,6 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
     }
 
     result.context.event = event;
-
+    if (_track) console.log({result: JSON.stringify(result)});
     return result;
 };

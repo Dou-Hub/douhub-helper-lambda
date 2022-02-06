@@ -1,30 +1,39 @@
-import {isObject, isNonEmptyString, newGuid, getSubObject, utcISOString, GUID_EMPTY, _track} from 'douhub-helper-util';
-import {HTTPERROR_400, ERROR_PARAMETER_MISSING, HTTPERROR_500 , ERROR_S3} from './constants';
-import {s3PutObject, RESOURCE_PREFIX, s3GetObject} from 'douhub-helper-service';
-import {isArray, assign} from 'lodash';
+import { isObject, isNonEmptyString, newGuid, getSubObject, utcISOString, GUID_EMPTY, _track } from 'douhub-helper-util';
+import { HTTPERROR_400, ERROR_PARAMETER_MISSING, HTTPERROR_500, ERROR_S3 } from './constants';
+import { s3PutObject, RESOURCE_PREFIX, s3GetObject } from 'douhub-helper-service';
+import { isArray, assign } from 'lodash';
 
-export const callFromAWSEvents = (event: Record<string,any>) => {
+export const callFromAWSEvents = (event: Record<string, any>) => {
     return event.source == "aws.events";
 };
 
+export type ActionSettings = {
+    solutionId: string,
+    id?: string,
+    name?: string,
+    userId?: string,
+    organizationId?: string,
+    user?: Record<string, any>,
+    organization?: Record<string, any>,
+    requireUserId: boolean,
+    requireOrganizationId: boolean,
+    type?: string
+}
 
-export const sendMessage = async (template: Record<string,any>, regarding?: Record<string,any> , settings?: Record<string,any>) => {
+
+export const sendMessage = async (template: Record<string, any>, settings: ActionSettings) => {
 
     // console.log({ template, regarding, settings });
     const source = 'douhub-helper-service.sendMessage';
 
-    if (!isObject(settings)) settings = {};
-    const errorDetail = { template, regarding, settings };
-
-    if (!isObject(template)) 
-    {
+    if (!isObject(template)) {
         throw {
             ...HTTPERROR_400,
             type: ERROR_PARAMETER_MISSING,
             source,
             detail: {
                 paramName: 'template',
-                template, regarding, settings
+                template, settings
             }
         }
     }
@@ -37,14 +46,11 @@ export const sendMessage = async (template: Record<string,any>, regarding?: Reco
             source,
             detail: {
                 paramName: 'template.content',
-                template, regarding, settings
+                template, settings
             }
         }
     }
 
-    if (!settings) settings = {};
-
-    if (isArray(settings.methods) && settings.methods.length > 0) template.methods = settings.methods; //the method defined in the settings will overwrite the one from template
     if (!(isArray(template.methods) && template.methods.length > 0)) {
         template.methods = [];
         if (content.email) template.methods.push('email');
@@ -60,14 +66,9 @@ export const sendMessage = async (template: Record<string,any>, regarding?: Reco
             source,
             detail: {
                 paramName: 'template.methods',
-                template, regarding, settings
+                template, settings
             }
         }
-    }
-
-    if (isObject(settings.recipients)) {
-        //the recipients defined in the settings will overwrite the one from template
-        template.recipients = settings.recipients;
     }
 
     if (!(isArray(template?.recipients?.to) && template?.recipients?.to?.length > 0)) {
@@ -77,13 +78,12 @@ export const sendMessage = async (template: Record<string,any>, regarding?: Reco
             source,
             detail: {
                 paramName: 'template.recipients.to',
-                template, regarding, settings
+                template, settings
             }
         }
     }
 
     //the recipients defined in the settings will overwrite the one from template
-    if (settings.sender) template.sender = settings.sender;
     if (!template.sender) {
         throw {
             ...HTTPERROR_400,
@@ -91,46 +91,50 @@ export const sendMessage = async (template: Record<string,any>, regarding?: Reco
             source,
             detail: {
                 paramName: 'template.sender',
-                template, regarding, settings
+                template, settings
             }
         }
     }
 
-    const ignoreContext = template.ignoreContext && true || false;
-    const ignoreUser = template.ignoreUser && true || false;
-    const ignoreOrganization = template.ignoreOrganization && true || false;
-
-    //the ignore settings in the template is for reduce the size of the message
-    if (ignoreContext || ignoreUser) delete settings.user;
-    if (ignoreContext || ignoreOrganization) delete settings.organization;
 
     //define context props to keep the object small
-    if (isObject(settings.organization) && isNonEmptyString(template.contextOrganizationProps)) {
+    if (settings && isObject(settings.organization) && isNonEmptyString(template.contextOrganizationProps)) {
         settings.organization = getSubObject(settings.organization, template.contextOrganizationProps);
     }
     if (isObject(settings.user) && isNonEmptyString(template.contextUserProps)) {
         settings.user = getSubObject(settings.user, template.contextUserProps);
     }
 
-    settings.mergeData = true;
-
     const ids = [];
     for (var i = 0; i < template.methods.length; i++) {
 
         ids.push(await sendAction(template.methods[i].toLowerCase(),
-            { regarding, template },
-            assign({ type: 'message' }, settings)));
+            template,
+            { type: 'message', ...settings }));
     }
 
     return ids;
 };
 
-export const sendAction = async (snsTopic:string, data:Record<string,any>, settings:Record<string,any>) => {
-
-    if (!isObject(settings)) settings = {};
+export const sendAction = async (
+    snsTopic: string,
+    data: Record<string, any>,
+    settings: ActionSettings) => {
 
     let { userId, organizationId, user, organization, requireUserId, requireOrganizationId, solutionId } = settings;
-    const source = 'douhub-helper-service.sendAction';
+    const source = 'douhub-helper-lambda.sendAction';
+
+    if (!isNonEmptyString(solutionId)) {
+        throw {
+            ...HTTPERROR_400,
+            type: ERROR_PARAMETER_MISSING,
+            source,
+            detail: {
+                paramName: 'solutionId',
+                snsTopic, data, settings
+            }
+        }
+    }
 
     if (!isNonEmptyString(snsTopic)) {
         throw {
@@ -144,7 +148,7 @@ export const sendAction = async (snsTopic:string, data:Record<string,any>, setti
         }
     }
 
-    if (requireUserId==true && !isNonEmptyString(userId)) {
+    if (requireUserId == true && !isNonEmptyString(userId)) {
         throw {
             ...HTTPERROR_400,
             type: ERROR_PARAMETER_MISSING,
@@ -156,9 +160,9 @@ export const sendAction = async (snsTopic:string, data:Record<string,any>, setti
         }
     }
 
-    if (requireOrganizationId==true && !isNonEmptyString(organizationId)) {
-        if (isObject(user) && isNonEmptyString(user.organizationId)) {
-            organizationId = user.organizationId;
+    if (requireOrganizationId == true && !isNonEmptyString(organizationId)) {
+        if (isObject(user) && isNonEmptyString(user?.organizationId)) {
+            organizationId = user?.organizationId;
         }
         else {
             throw {
@@ -177,21 +181,23 @@ export const sendAction = async (snsTopic:string, data:Record<string,any>, setti
     if (!isNonEmptyString(settings.type)) settings.type = 'action';
     if (!isNonEmptyString(organizationId)) organizationId = GUID_EMPTY;
 
-    const id = isNonEmptyString(settings.id) ? settings.id : newGuid();
-    const name = isNonEmptyString(settings.name) ? settings.name : '';
+    const id = isNonEmptyString(settings?.id) ? settings?.id : newGuid();
+    const name = isNonEmptyString(settings?.name) ? settings?.name : '';
     const s3FileName = `${solutionId}/${organizationId}/${snsTopic}/${isNonEmptyString(name) ? name + '/' : ''}${id}.json`;
     const s3BucketName = `${RESOURCE_PREFIX}-${settings.type}`;
 
-    const item = assign((settings.mergeData ? data : { data }), { settings }, {
+    const item: Record<string, any> = {
+        data, settings,
         id, createdOn: utcISOString(),
         user, organization,
         createdBy: userId, solutionId, organizationId,
         snsTopic, s3BucketName, s3FileName
-    });
-    if (isNonEmptyString(name)) item.name = settings.name;
+    };
+
+    if (isNonEmptyString(name)) item.name = settings?.name;
 
     try {
-        await s3PutObject(s3BucketName,s3FileName,item);
+        await s3PutObject(s3BucketName, s3FileName, item);
     } catch (error) {
         throw {
             ...HTTPERROR_500,
@@ -200,7 +206,7 @@ export const sendAction = async (snsTopic:string, data:Record<string,any>, setti
             detail: {
                 functionName: 's3PutObject',
                 snsTopic, data, settings, error,
-                s3BucketName,s3FileName,item
+                s3BucketName, s3FileName, item
             }
         }
     }
@@ -240,23 +246,9 @@ export const getActionDataFromSNSRecord = async (record: Record<string, any>) =>
     return await s3GetObject(record.bucketName, record.fileName);
 };
 
-export const validateActionDataFromSNSRecord = (data: Record<string, any>, settings?: Record<string, any>) => {
+export const validateActionDataFromSNSRecord = (data: Record<string, any>, settings: ActionSettings) => {
 
     const source = 'sns.validateActionDataFromSNSRecord';
-
-    if (!isObject(settings)) settings = {};
-
-    if (!isObject(data) && !settings?.ignoreData) {
-        throw {
-            ...HTTPERROR_400,
-            type: ERROR_PARAMETER_MISSING,
-            source,
-            detail: {
-                paramName: 'data',
-                data
-            }
-        }
-    }
 
     if (settings?.requireUserId && !isNonEmptyString(settings.userId)) {
         throw {
@@ -283,30 +275,6 @@ export const validateActionDataFromSNSRecord = (data: Record<string, any>, setti
                     paramName: 'settings.organizationId',
                     data
                 }
-            }
-        }
-    }
-
-    if (settings?.requireOrganization && !isObject(settings.organization)) {
-        throw {
-            ...HTTPERROR_400,
-            type: ERROR_PARAMETER_MISSING,
-            source,
-            detail: {
-                paramName: 'settings.organization',
-                data
-            }
-        }
-    }
-
-    if (settings?.requireUser && !isObject(settings.user)) {
-        throw {
-            ...HTTPERROR_400,
-            type: ERROR_PARAMETER_MISSING,
-            source,
-            detail: {
-                paramName: 'settings.organization',
-                data
             }
         }
     }

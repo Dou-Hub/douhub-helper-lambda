@@ -86,6 +86,7 @@ export {
 
 
 export {
+    ActionSettings,
     sendAction,
     sendMessage,
     processSNSRecords,
