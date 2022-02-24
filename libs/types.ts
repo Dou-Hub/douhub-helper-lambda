@@ -13,6 +13,7 @@ export type LambdaError = {
     statusCode: number;
     statusName?: string;
     type?: string;
+    types?: string[];
     source?: string;
     detail?: Record<string, any>;
     error?: Record<string, any> | string;
@@ -30,7 +31,7 @@ export type CheckCallerSettings = {
     apiPoints?: number
     stopAWSEvent?: boolean,
     skipAuthentication?: boolean,
-    needAuthorization?:boolean,
+    needAuthorization?: boolean,
     verifyReCaptcha?: boolean,
     ignoreRateLimit?: boolean,
     needUserProfile?: boolean,
@@ -39,7 +40,7 @@ export type CheckCallerSettings = {
 }
 
 export type CheckCallerResult = {
-    type: 'STOP'|'CONTINUE'|'ERROR',
+    type: 'STOP' | 'CONTINUE' | 'ERROR',
     solution?: any,
     context?: any,
     error?: LambdaError
@@ -50,7 +51,7 @@ export type HttpError = {
     statusName: string
 }
 
-export type Token ={
+export type Token = {
     token: string,
     type: string,
     data?: any,

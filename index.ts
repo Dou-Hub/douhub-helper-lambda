@@ -66,12 +66,15 @@ export {
 } from './libs/context';
 
 export {
-    getToken,
     encryptToken,
     decryptToken,
+    
+    createToken,
+    getToken,
     checkToken,
+    
     createUserToken,
-    createToken
+    getUserToken,
 } from './libs/token';
 
 export {

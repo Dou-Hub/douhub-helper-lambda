@@ -7,7 +7,7 @@
 import { decrypt, encrypt } from './crypto';
 import { newGuid, utcISOString } from 'douhub-helper-util';
 import { find, map } from 'lodash';
-import { getSecretValue, dynamoDBRetrieve, dynamoDBCreate, DYNAMO_DB_TABLE_NAME_PROFILE } from 'douhub-helper-service';
+import { getSecretValue, dynamoDBRetrieve, DYNAMO_DB_TABLE_NAME_PROFILE, dynamoDBUpsert } from 'douhub-helper-service';
 import { Token } from './types';
 
 export const encryptToken = async (id: string): Promise<string> => {
@@ -25,11 +25,11 @@ export const decryptToken = async (token: string): Promise<string> => {
 };
 
 //Upsert a token record in DynamoDB user profile table, id: tokens.${userId}
-export const createToken = async (userId: string, type: string, data: Record<string, any>, allowMultiple?: boolean): Promise<Token> => {
+export const createToken = async (tokenId: string, type: string, data: Record<string, any>, allowMultiple?: boolean): Promise<Token> => {
 
-    const id: string = `tokens.${userId}`;
+    const id: string = `tokens.${tokenId}`;
     let profile = await dynamoDBRetrieve(id, DYNAMO_DB_TABLE_NAME_PROFILE);
-    let token = { token: await encryptToken(`${userId}|${type}|${newGuid()}`), createdOn: utcISOString(), type, data };
+    let token = { token: await encryptToken(`${tokenId}|${type}|${newGuid()}`), createdOn: utcISOString(), type, data };
    
     if (!profile) {
         //if there is no user tokens profile, we will create one
@@ -38,7 +38,6 @@ export const createToken = async (userId: string, type: string, data: Record<str
     else {
         if (!profile.tokens) profile.tokens = [];
 
-        //if there is a user tokens profile,
         if (allowMultiple) {
             profile.tokens.push(token); // add one more;
         }
@@ -62,9 +61,32 @@ export const createToken = async (userId: string, type: string, data: Record<str
     }
 
     //update token profile record
-    await dynamoDBCreate(profile, DYNAMO_DB_TABLE_NAME_PROFILE);
+    await dynamoDBUpsert(profile, DYNAMO_DB_TABLE_NAME_PROFILE, true);
 
     return token;
+};
+
+export const getToken = async (tokenId: string, type: string): Promise<Token | null> => {
+    const id: string = `tokens.${tokenId}`;
+    const profile = await dynamoDBRetrieve(id, DYNAMO_DB_TABLE_NAME_PROFILE);
+    if (!profile) return null;
+    const token: Token = find(profile.tokens, (t) => t.type == type);
+    return token || null;
+};
+
+export const checkToken = async (token: string): Promise<Token | null> => {
+
+    try {
+        const tokenId = (await decryptToken(token)).split('|')[0];
+        const id = `tokens.${tokenId}`;
+        const profile = await dynamoDBRetrieve(id, DYNAMO_DB_TABLE_NAME_PROFILE);
+        if (!profile) return null;
+        const result: Token = find(profile.tokens, (t) => t.token == token);
+        return result ? result : null;
+    }
+    catch (error) {
+        return null;
+    }
 };
 
 
@@ -77,26 +99,7 @@ export const createUserToken = async (userId: string, organizationId: string, ro
     return token;
 };
 
-export const getToken = async (userId: string, type: string): Promise<Token | null> => {
-    const id: string = `tokens.${userId}`;
-    const profile = await dynamoDBRetrieve(id, DYNAMO_DB_TABLE_NAME_PROFILE);
-    if (!profile) return null;
-    const token: Token = find(profile.tokens, (t) => t.type == type);
-    return token || null;
+
+export const getUserToken = async (userId: string): Promise<Token | null> => {
+    return await getToken(userId, 'user');
 };
-
-export const checkToken = async (token: string): Promise<Token | null> => {
-
-    try {
-        const userId = (await decryptToken(token)).split('|')[0];
-        const id = `tokens.${userId}`;
-        const profile = await dynamoDBRetrieve(id, DYNAMO_DB_TABLE_NAME_PROFILE);
-        if (!profile) return null;
-        const result: Token = find(profile.tokens, (t) => t.token == token);
-        return result ? result : null;
-    }
-    catch (error) {
-        return null;
-    }
-};
-

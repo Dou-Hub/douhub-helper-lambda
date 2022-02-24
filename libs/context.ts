@@ -277,6 +277,6 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
     }
 
     result.context.event = event;
-    if (_track) console.log({result: JSON.stringify(result)});
+    // if (_track) console.log({result: JSON.stringify(result)});
     return result;
 };

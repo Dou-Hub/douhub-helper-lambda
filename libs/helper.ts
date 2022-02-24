@@ -87,18 +87,42 @@ export const getArrayPropValueOfEvent = (event: any, name: string, defaultValue?
 };
 
 //Render error result
+
 export const onError = (currentError?: LambdaError, innerError?: any): LambdaResponse => {
 
     if (!isObject(currentError)) currentError = { statusCode: 500 };
     const error = { ...currentError };
-
+    const types:string[] = [];
 
     if (isObject(innerError)) {
         if (innerError['statusCode']) error.statusCode = innerError['statusCode'];
         if (innerError['statusName']) error.statusName = innerError['statusName'];
-        if (innerError['type'] && isNil(error.type)) error.type = innerError['type'];
+        if (innerError['type'])
+        {
+            if(isNil(error.type)) 
+            {
+                error.type = innerError['type'];
+                types.push(`${error.type}`);
+            }
+            else
+            {
+                types.unshift(error.type);
+                types.push(`${innerError['type']}`);
+            }
+        }  
+        let errorTree = innerError?.detail?.error;
+        console.log({errorTree})
+       
+        while(isObject(errorTree))
+        {
+            if (errorTree?.type) types.push(`${errorTree?.type}`);
+            errorTree = errorTree?.detail?.error;
+        }
+        
+        error.types = types;
     }
 
+  
     if (isString(innerError)) {
         error.statusName = innerError;
     }
@@ -123,6 +147,7 @@ export const onError = (currentError?: LambdaError, innerError?: any): LambdaRes
         body: JSON.stringify(error)
     };
 };
+
 
 //Render success result
 export const onSuccess = (data: Record<string, any>): LambdaResponse => {
