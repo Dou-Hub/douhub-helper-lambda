@@ -9,6 +9,7 @@ export const callFromAWSEvents = (event: Record<string, any>) => {
 
 export type ActionSettings = {
     solutionId: string,
+    domain?: string,
     id?: string,
     name?: string,
     userId?: string,

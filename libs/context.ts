@@ -14,7 +14,7 @@ import {
 } from './constants';
 import { CheckCallerSettings, CheckCallerResult } from './types';
 import { CognitoIdentityServiceProvider } from 'aws-sdk';
-import { getPropValueOfEvent, checkRateLimit } from './helper';
+import { getPropValueOfEvent, checkRateLimit, getDomain } from './helper';
 import axios from 'axios';
 import { getSecretValue, AWS_REGION, S3_BUCKET_NAME_DATA, DYNAMO_DB_TABLE_NAME_PROFILE } from 'douhub-helper-service';
 
@@ -158,6 +158,7 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
     //Get recaptchaToken submitted
     const recaptchaToken = getPropValueOfEvent(event, 'recaptchaToken');
     const sourceIp = event.identity && event.identity.sourceIp;
+    const domain = getDomain(event, false);
 
     if (event.source == "aws.events") {
         settings.ignoreRateLimit = true;
@@ -188,7 +189,7 @@ export const checkCaller = async (event: any, settings: CheckCallerSettings): Pr
         };
     }
 
-    const result: CheckCallerResult = { context: { solutionId }, type: 'CONTINUE' };
+    const result: CheckCallerResult = { context: { solutionId, domain, sourceIp }, type: 'CONTINUE' };
 
     //check the rate limit
     if (!settings.ignoreRateLimit && !(await checkRateLimit(sourceIp, settings.apiName, settings.apiPoints))) {
