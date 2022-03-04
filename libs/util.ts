@@ -21,7 +21,7 @@ export type ActionSettings = {
     type?: string
 }
 
-
+//TODO Code Review
 export const sendMessage = async (template: Record<string, any>, settings: ActionSettings) => {
 
     // console.log({ template, regarding, settings });
@@ -106,15 +106,12 @@ export const sendMessage = async (template: Record<string, any>, settings: Actio
         settings.user = getSubObject(settings.user, template.contextUserProps);
     }
 
-    const ids = [];
-    for (var i = 0; i < template.methods.length; i++) {
+     for (var i = 0; i < template.methods.length; i++) {
 
-        ids.push(await sendAction(template.methods[i].toLowerCase(),
+        await sendAction(template.methods[i].toLowerCase(),
             template,
-            { type: 'message', ...settings }));
+            { type: 'message', ...settings });
     }
-
-    return ids;
 };
 
 export const sendAction = async (

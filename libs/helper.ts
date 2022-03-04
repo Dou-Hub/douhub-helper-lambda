@@ -80,7 +80,7 @@ export const getBooleanValueOfEvent = (event: any, name: string, defaultValue?: 
     return defaultValue;
 };
 
-export const getArrayPropValueOfEvent = (event: any, name: string, defaultValue?: []): Array<string> | undefined => {
+export const getArrayPropValueOfEvent = (event: any, name: string, defaultValue?: []): Array<any> | undefined => {
     if (!isArray(defaultValue)) defaultValue = undefined;
     const val = getPropValueOfEvent(event, name);
     return isArray(val) ? val : isNonEmptyString(val) ? JSON.parse(val) : defaultValue;
