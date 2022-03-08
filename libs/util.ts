@@ -25,7 +25,7 @@ export type ActionSettings = {
 export const sendMessage = async (template: Record<string, any>, settings: ActionSettings) => {
 
     // console.log({ template, regarding, settings });
-    const source = 'douhub-helper-service.sendMessage';
+    const source = 'douhub-helper-lambda.sendMessage';
 
     if (!isObject(template)) {
         throw {
