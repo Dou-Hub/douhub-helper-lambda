@@ -5,9 +5,9 @@
 
 
 import { decrypt, encrypt } from './crypto';
-import { newGuid, utcISOString } from 'douhub-helper-util';
-import { find, map } from 'lodash';
-import { getSecretValue, dynamoDBRetrieve, DYNAMO_DB_TABLE_NAME_PROFILE, dynamoDBUpsert } from 'douhub-helper-service';
+import { checkRecordPrivilege, isNonEmptyString, newGuid, utcISOString, _track } from 'douhub-helper-util';
+import { find, isObject, map } from 'lodash';
+import { getSecretValue, dynamoDBRetrieve, DYNAMO_DB_TABLE_NAME_PROFILE, dynamoDBUpsert, cosmosDBRetrieveById, DEFAULT_AUTH_ATTRIBUTES } from 'douhub-helper-service';
 import { Token } from './types';
 
 export const encryptToken = async (id: string): Promise<string> => {
@@ -24,13 +24,82 @@ export const decryptToken = async (token: string): Promise<string> => {
         await getSecretValue('SECRET_IV'));
 };
 
+
+export const createRecordToken = async (context: Record<string, any>, id: string): Promise<string> => {
+
+    const record = await cosmosDBRetrieveById(id, { attributes: DEFAULT_AUTH_ATTRIBUTES });
+
+    //the user should have permission to read the record
+    if (record && checkRecordPrivilege(context, record, "read")) {
+        if (_track) console.log(`createRecordToken checkRecordPrivilege(context, record, "read")=false`);
+        return await encryptToken(`${record.id}.${record['_rid']}`);
+    }
+
+    return '';
+};
+
+export const checkRecordToken = async (token: string, settings?: {
+    attributes?: string | undefined;
+}): Promise<Record<string, any> | null> => {
+    try {
+        const result = (await decryptToken(token)).split('.');
+        return await checkRecordTokenById(result[0], token, settings)
+    }
+    catch (ex) {
+
+    }
+
+    return null;
+}
+
+export const checkRecordTokenByRecord = async (record: Record<string, any>, token: string): Promise<boolean> => {
+    try {
+        const result = (await decryptToken(token)).split('.');
+        return result.length == 2 && record.id == result[0] && record["_rid"] == result[1];
+    }
+    catch (ex) {
+
+    }
+
+    return false;
+}
+
+export const checkRecordTokenById = async (id: string, token: string, settings?: {
+    attributes?: string | undefined;
+}): Promise<Record<string, any> | null> => {
+
+    try {
+        const result = (await decryptToken(token)).split('.');
+        const tokenId = result[0];
+        if (result.length != 2 && id !== tokenId) return null;
+
+        if (!isObject(settings)) settings = {};
+
+        let attributes = settings.attributes;
+        if (isNonEmptyString(attributes) && attributes != '*') {
+            if (`,${attributes},`?.indexOf(`,id,`) < 0) attributes = attributes + ',id';
+            if (`,${attributes},`?.indexOf(`,_id,`) < 0) attributes = attributes + ',_id';
+            settings.attributes = attributes;
+        }
+
+        const record = await cosmosDBRetrieveById(id, settings);
+        return record && record["_rid"] == result[1] ? record : null;
+    }
+    catch (ex) {
+
+    }
+
+    return null;
+};
+
+
 //Upsert a token record in DynamoDB user profile table, id: tokens.${userId}
 export const createToken = async (tokenId: string, type: string, data: Record<string, any>, allowMultiple?: boolean): Promise<Token> => {
 
     const id: string = `tokens.${tokenId}`;
     let profile = await dynamoDBRetrieve(id, DYNAMO_DB_TABLE_NAME_PROFILE);
     let token = { token: await encryptToken(`${tokenId}|${type}|${newGuid()}`), createdOn: utcISOString(), type, data };
-   
+
     if (!profile) {
         //if there is no user tokens profile, we will create one
         profile = { createdOn: utcISOString(), id, tokens: [token] };

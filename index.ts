@@ -72,6 +72,11 @@ export {
     createToken,
     getToken,
     checkToken,
+
+    createRecordToken,
+    checkRecordToken,
+    checkRecordTokenByRecord,
+    checkRecordTokenById,
     
     createUserToken,
     getUserToken,
