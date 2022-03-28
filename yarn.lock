@@ -1434,10 +1434,10 @@ domexception@^2.0.1:
   dependencies:
     webidl-conversions "^5.0.0"
 
-douhub-helper-service@^1.0.54:
-  version "1.0.54"
-  resolved "https://registry.yarnpkg.com/douhub-helper-service/-/douhub-helper-service-1.0.54.tgz#7a0574e3ed1b63f289c3a278221e4862d46bc9bd"
-  integrity sha512-b8T6LR/msiLVBh3PFtEEHnLkcCAMEA27jOjia9Yj8wRismQbTMtGkFmvhu/4NxHAKdNhuz2naENNfrAqayZKCw==
+douhub-helper-service@^1.0.55:
+  version "1.0.55"
+  resolved "https://registry.yarnpkg.com/douhub-helper-service/-/douhub-helper-service-1.0.55.tgz#4a5678e78ab3bbd27979351a8300686bcfd9d77c"
+  integrity sha512-ky9ZBScGsBGSOAmcTdIZkmi3Yb6LIevDuZ279663jRxfmKlC7zJX+u/TI9lWtXn9PFWn9i8gQV8dXvF9Ocfpdg==
   dependencies:
     "@azure/cosmos" "^3.14.1"
     "@elastic/elasticsearch" "^7.17.0"
