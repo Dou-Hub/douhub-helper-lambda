@@ -103,4 +103,11 @@ export {
     callFromAWSEvents
 } from './libs/util';
 
+export {
+    getS3Cache,
+    getS3CacheObject,
+    setS3Cache,
+    setS3CacheObject
+} from './libs/s3Cache';
+
 
