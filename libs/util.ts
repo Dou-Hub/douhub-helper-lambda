@@ -1,7 +1,9 @@
 import { isObject, isNonEmptyString, newGuid, getSubObject, utcISOString, GUID_EMPTY, _track } from 'douhub-helper-util';
 import { HTTPERROR_400, ERROR_PARAMETER_MISSING, HTTPERROR_500, ERROR_S3 } from './constants';
 import { s3PutObject, RESOURCE_PREFIX, s3GetObject } from 'douhub-helper-service';
-import { isArray, assign } from 'lodash';
+import { isArray } from 'lodash';
+import { sendEmail, s3Get, S3_BUCKET_NAME_DATA } from 'douhub-helper-service';
+import { processContent } from 'douhub-helper-data';
 
 export const callFromAWSEvents = (event: Record<string, any>) => {
     return event.source == "aws.events";
@@ -19,6 +21,36 @@ export type ActionSettings = {
     requireUserId: boolean,
     requireOrganizationId: boolean,
     type?: string
+}
+
+export const sendSolutionEmail = async (
+    solution: Record<string, any>, 
+    emailTemplateS3FileName: string,
+    recipients: string[],
+    user?: Record<string, any>) => {
+
+    const solutionId = solution.id;
+    const sender = solution?.sender;
+   
+    if (isNonEmptyString(sender?.email)) {
+
+        const emailTemplateS3 = await s3Get(S3_BUCKET_NAME_DATA, `${solution.id}/${emailTemplateS3FileName}`);
+        const emailTemplate = emailTemplateS3 && JSON.parse(emailTemplateS3.content);
+        const context = { solutionId, userId: user?.id, organizationId: user?.organizationId, user };
+        const htmlMessage = await processContent(context, true, emailTemplate?.htmlMessage, user);
+
+        await sendEmail(sender?.service, sender?.email, recipients, emailTemplate.subject, htmlMessage, undefined, emailTemplate.cc);
+    }
+    else {
+        throw {
+            ...HTTPERROR_400,
+            type: ERROR_PARAMETER_MISSING,
+            source: 'sendSolutionEmail',
+            detail: {
+                reason: `The "${S3_BUCKET_NAME_DATA}/${solution.id}/email-register-solution.json" is not provided in S3.`
+            }
+        }
+    }
 }
 
 //TODO Code Review
@@ -106,7 +138,7 @@ export const sendMessage = async (template: Record<string, any>, settings: Actio
         settings.user = getSubObject(settings.user, template.contextUserProps);
     }
 
-     for (var i = 0; i < template.methods.length; i++) {
+    for (let i = 0; i < template.methods.length; i++) {
 
         await sendAction(template.methods[i].toLowerCase(),
             template,
@@ -118,8 +150,9 @@ export const sendAction = async (
     snsTopic: string,
     data: Record<string, any>,
     settings: ActionSettings) => {
+    let { organizationId } = settings;
 
-    let { userId, organizationId, user, organization, requireUserId, requireOrganizationId, solutionId } = settings;
+    const { userId, user, organization, requireUserId, requireOrganizationId, solutionId } = settings;
     const source = 'douhub-helper-lambda.sendAction';
 
     if (!isNonEmptyString(solutionId)) {
@@ -217,7 +250,7 @@ export const processSNSRecords = async (records: Array<Record<string, any>>, onM
 
     const finished = [];
     const failed = [];
-    for (var i = 0; i < records.length; i++) {
+    for (let i = 0; i < records.length; i++) {
         const record = records[i];
         const message = JSON.parse(record.Sns.Message);
         try {

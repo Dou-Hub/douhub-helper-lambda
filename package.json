@@ -1,7 +1,7 @@
 {
   "name": "douhub-helper-lambda",
   "licence": "MIT",
-  "version": "1.0.66",
+  "version": "1.0.68",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
@@ -16,6 +16,7 @@
   "dependencies": {
     "axios": "^0.24.0",
     "crypto-js": "^4.1.1",
+    "douhub-helper-data": "^1.0.84",
     "douhub-helper-service": "1.0.59",
     "douhub-helper-util": "^1.0.91",
     "lodash": "^4.17.21",

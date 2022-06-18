@@ -100,7 +100,8 @@ export {
     processSNSRecords,
     getActionDataFromSNSRecord,
     validateActionDataFromSNSRecord,
-    callFromAWSEvents
+    callFromAWSEvents,
+    sendSolutionEmail
 } from './libs/util';
 
 export {
